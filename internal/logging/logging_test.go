@@ -97,7 +97,7 @@ func TestStepWriterNonSensitive(t *testing.T) {
 	sl := l.Step("build", false)
 	w := sl.Writer()
 
-	fmt.Fprint(w, "line one\nline two\n")
+	_, _ = fmt.Fprint(w, "line one\nline two\n")
 
 	out := buf.String()
 	if !strings.Contains(out, "[build] line one") {

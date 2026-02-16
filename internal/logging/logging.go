@@ -39,7 +39,7 @@ func (l *Logger) Log(format string, args ...any) {
 	ts := time.Now().UTC().Format(time.RFC3339)
 	msg := fmt.Sprintf(format, args...)
 	l.mu.Lock()
-	fmt.Fprintf(l.w, "[%s] %s\n", ts, msg)
+	_, _ = fmt.Fprintf(l.w, "[%s] %s\n", ts, msg)
 	l.mu.Unlock()
 }
 
@@ -67,7 +67,7 @@ func (s *StepLogger) Log(format string, args ...any) {
 	ts := time.Now().UTC().Format(time.RFC3339)
 	msg := fmt.Sprintf(format, args...)
 	s.l.mu.Lock()
-	fmt.Fprintf(s.l.w, "[%s] [%s] %s\n", ts, s.id, msg)
+	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] %s\n", ts, s.id, msg)
 	s.l.mu.Unlock()
 }
 
@@ -75,7 +75,7 @@ func (s *StepLogger) Log(format string, args ...any) {
 func (s *StepLogger) Redacted() {
 	ts := time.Now().UTC().Format(time.RFC3339)
 	s.l.mu.Lock()
-	fmt.Fprintf(s.l.w, "[%s] [%s] [SENSITIVE - output redacted]\n", ts, s.id)
+	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] [SENSITIVE - output redacted]\n", ts, s.id)
 	s.l.mu.Unlock()
 }
 
@@ -83,7 +83,7 @@ func (s *StepLogger) Redacted() {
 func (s *StepLogger) Exit(code int) {
 	ts := time.Now().UTC().Format(time.RFC3339)
 	s.l.mu.Lock()
-	fmt.Fprintf(s.l.w, "[%s] [%s] exit %d\n", ts, s.id, code)
+	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] exit %d\n", ts, s.id, code)
 	s.l.mu.Unlock()
 }
 
