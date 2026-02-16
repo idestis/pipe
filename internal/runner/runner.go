@@ -31,7 +31,9 @@ func New(p *model.Pipeline, rs *state.RunState, log *logging.Logger) *Runner {
 }
 
 func (r *Runner) saveState() {
-	r.saveState()
+	if err := state.Save(r.state); err != nil {
+		r.log.Error("failed to save state: %v", err)
+	}
 }
 
 func (r *Runner) Run() error {
