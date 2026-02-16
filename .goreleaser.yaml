@@ -17,10 +17,10 @@ archives:
     name_template: "pipe-{{.Version}}-{{.Os}}-{{.Arch}}"
 
 brews:
-  - repository:
+  - directory: Formula
+    repository:
       owner: destis
       name: pipe
-      directory: Formula
     homepage: https://github.com/destis/pipe
     description: CI-friendly pipeline runner inspired by Taskfile
     license: MIT
