@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/idestis/pipe/compare/v1.0.2...v1.0.3) (2026-02-16)
+
+
+### Bug Fixes
+
+* correct GitHub owner from destis to idestis across module and configs ([c039e93](https://github.com/idestis/pipe/commit/c039e93f83713d90e72dee8299e6d712fafa96fe))
+
 ## [1.0.2](https://github.com/idestis/pipe/compare/v1.0.1...v1.0.2) (2026-02-16)
 
 
