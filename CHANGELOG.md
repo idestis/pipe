@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/idestis/pipe/compare/v1.0.0...v1.0.1) (2026-02-16)
+
+
+### Bug Fixes
+
+* auto-trigger release on merged release-please PR and fix goreleaser brew config ([f201b96](https://github.com/idestis/pipe/commit/f201b9639e8bcabc16789ef1a5985aea392974f7))
+
 ## 1.0.0 (2026-02-16)
 
 
