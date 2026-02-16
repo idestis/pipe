@@ -94,6 +94,7 @@ func TestRunField_InvalidSequenceElement(t *testing.T) {
 func TestPipeline_FullUnmarshal(t *testing.T) {
 	input := `
 name: full
+description: "full pipeline"
 steps:
   - id: single
     run: "echo hello"
@@ -118,6 +119,9 @@ steps:
 	if p.Name != "full" {
 		t.Fatalf("expected name %q, got %q", "full", p.Name)
 	}
+	if p.Description != "full pipeline" {
+		t.Fatalf("expected description %q, got %q", "full pipeline", p.Description)
+	}
 	if len(p.Steps) != 4 {
 		t.Fatalf("expected 4 steps, got %d", len(p.Steps))
 	}
@@ -135,6 +139,22 @@ steps:
 	}
 	if !p.Steps[3].Sensitive {
 		t.Fatal("step 3: expected sensitive=true")
+	}
+}
+
+func TestPipeline_DescriptionOptional(t *testing.T) {
+	input := `
+name: nodesc
+steps:
+  - id: a
+    run: "echo a"
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.Description != "" {
+		t.Fatalf("expected empty description, got %q", p.Description)
 	}
 }
 
