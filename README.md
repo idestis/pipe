@@ -15,7 +15,7 @@ Download the latest binary for your platform from the
 ### Homebrew
 
 ```
-brew tap destis/pipe https://github.com/destis/pipe.git
+brew tap destis/pipe
 brew install pipe
 ```
 

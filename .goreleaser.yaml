@@ -20,7 +20,8 @@ brews:
   - directory: Formula
     repository:
       owner: destis
-      name: pipe
+      name: homebrew-pipe
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://github.com/destis/pipe
     description: CI-friendly pipeline runner inspired by Taskfile
     license: MIT
