@@ -125,6 +125,11 @@ func (c *Client) GetTag(owner, name, tag string) (*TagDetail, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&detail); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
+	// Normalize: API returns hash in "digest" field (sha256:<hex>) but consumers
+	// expect the bare hex in SHA256. Extract it when SHA256 is not set directly.
+	if detail.SHA256 == "" && strings.HasPrefix(detail.Digest, "sha256:") {
+		detail.SHA256 = strings.TrimPrefix(detail.Digest, "sha256:")
+	}
 	sha := detail.SHA256
 	if len(sha) > 12 {
 		sha = sha[:12]
