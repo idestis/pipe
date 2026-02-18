@@ -21,11 +21,19 @@ var rootCmd = &cobra.Command{
 		if len(args) == 0 {
 			return cmd.Help()
 		}
-		overrides, err := parseVarOverrides(args[1:])
+		name := args[0]
+		rest := args[1:]
+
+		// pipe <pipeline> help → show pipeline-specific usage
+		if len(rest) == 1 && rest[0] == "help" {
+			return showPipelineHelp(name)
+		}
+
+		overrides, err := parseVarOverrides(rest)
 		if err != nil {
 			return err
 		}
-		return runPipeline(args[0], overrides)
+		return runPipeline(name, overrides)
 	},
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -49,6 +57,14 @@ func init() {
 	rootCmd.AddCommand(cacheCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
+	rootCmd.AddCommand(pullCmd)
+	rootCmd.AddCommand(pushCmd)
+	rootCmd.AddCommand(mvCmd)
+	rootCmd.AddCommand(aliasCmd)
+	rootCmd.AddCommand(inspectCmd)
+	rootCmd.AddCommand(switchCmd)
+	rootCmd.AddCommand(tagCmd)
+	rootCmd.AddCommand(rmCmd)
 }
 
 func initConfig() {

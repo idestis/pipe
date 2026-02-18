@@ -7,11 +7,14 @@ import (
 )
 
 var (
-	BaseDir  string
-	FilesDir string
-	StateDir string
-	LogDir   string
-	CacheDir string
+	BaseDir         string
+	FilesDir        string
+	HubDir          string
+	StateDir        string
+	LogDir          string
+	CacheDir        string
+	CredentialsPath string
+	AliasesPath     string
 )
 
 func init() {
@@ -21,9 +24,12 @@ func init() {
 	}
 	BaseDir = filepath.Join(home, ".pipe")
 	FilesDir = filepath.Join(BaseDir, "files")
+	HubDir = filepath.Join(BaseDir, "hub")
 	StateDir = filepath.Join(BaseDir, "state")
 	LogDir = filepath.Join(BaseDir, "logs")
 	CacheDir = filepath.Join(BaseDir, "cache")
+	CredentialsPath = filepath.Join(BaseDir, "credentials.json")
+	AliasesPath = filepath.Join(BaseDir, "aliases.json")
 }
 
 func EnsureDirs(pipelineName string) error {

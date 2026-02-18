@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/idestis/pipe/internal/config"
+	"github.com/idestis/pipe/internal/hub"
 	"github.com/idestis/pipe/internal/model"
+	"github.com/idestis/pipe/internal/resolve"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,6 +18,9 @@ import (
 type PipelineInfo struct {
 	Name        string
 	Description string
+	Source      string // "local" or "hub"
+	Alias       string // alias pointing to this pipe, if any
+	Version     string // active tag for hub pipes
 }
 
 func LoadPipeline(name string) (*model.Pipeline, error) {
@@ -187,6 +192,92 @@ func ListPipelines() ([]PipelineInfo, error) {
 			name = strings.TrimSuffix(base, ".yaml")
 		}
 		infos = append(infos, PipelineInfo{Name: name, Description: p.Description})
+	}
+
+	sort.Slice(infos, func(i, j int) bool {
+		return infos[i].Name < infos[j].Name
+	})
+	return infos, nil
+}
+
+// LoadPipelineFromPath loads a pipeline from an explicit file path.
+func LoadPipelineFromPath(path, displayName string) (*model.Pipeline, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading pipeline %q: %w", displayName, err)
+	}
+
+	var p model.Pipeline
+	if err := yaml.Unmarshal(data, &p); err != nil {
+		return nil, fmt.Errorf("parsing pipeline %q: %w", displayName, err)
+	}
+
+	if p.Name == "" {
+		p.Name = displayName
+	}
+
+	if err := Validate(&p); err != nil {
+		return nil, fmt.Errorf("validating pipeline %q: %w", displayName, err)
+	}
+	return &p, nil
+}
+
+// ListAllPipelines merges local files and hub pipes into a unified list.
+func ListAllPipelines() ([]PipelineInfo, error) {
+	// Load aliases for reverse lookup
+	aliases, err := resolve.LoadAliases()
+	if err != nil {
+		return nil, err
+	}
+	aliasMap := make(map[string]string) // target → alias name
+	for name, entry := range aliases {
+		aliasMap[entry.Target] = name
+	}
+
+	var infos []PipelineInfo
+
+	// Local pipes
+	localPipes, err := ListPipelines()
+	if err != nil {
+		return nil, err
+	}
+	for _, lp := range localPipes {
+		info := PipelineInfo{
+			Name:        lp.Name,
+			Description: lp.Description,
+			Source:      "local",
+		}
+		if a, ok := aliasMap[lp.Name]; ok {
+			info.Alias = a
+		}
+		infos = append(infos, info)
+	}
+
+	// Hub pipes
+	hubPipes, err := hub.ListPipes()
+	if err != nil {
+		return nil, err
+	}
+	for _, hp := range hubPipes {
+		fullName := hp.Owner + "/" + hp.Name
+		path := hub.ContentPath(hp.Owner, hp.Name, hp.ActiveTag)
+		desc := ""
+		if data, err := os.ReadFile(path); err == nil {
+			var p model.Pipeline
+			if err := yaml.Unmarshal(data, &p); err == nil {
+				desc = p.Description
+			}
+		}
+		info := PipelineInfo{
+			Name:        fullName,
+			Description: desc,
+			Source:      "hub",
+			Version:     hp.ActiveTag,
+		}
+		if a, ok := aliasMap[fullName]; ok {
+			info.Alias = a
+		}
+		infos = append(infos, info)
 	}
 
 	sort.Slice(infos, func(i, j int) bool {

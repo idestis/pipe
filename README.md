@@ -193,13 +193,11 @@ Copy any example to `~/.pipe/files/` and customize it for your environment.
 
 ## Dependencies
 
-Pipe is a pure-Go binary with a single external dependency:
-
 | Module | Purpose |
 |--------|---------|
+| [spf13/cobra](https://github.com/spf13/cobra) | CLI framework and command routing |
+| [charmbracelet/log](https://github.com/charmbracelet/log) | Styled terminal logging |
 | [gopkg.in/yaml.v3](https://github.com/go-yaml/yaml) | YAML pipeline parsing |
-
-Everything else — process execution, retry logic, state persistence, logging — uses the Go standard library.
 
 ## Development
 
