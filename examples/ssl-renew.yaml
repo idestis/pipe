@@ -6,10 +6,13 @@ steps:
 
   - id: verify
     run: "openssl x509 -in /etc/letsencrypt/live/example.com/fullchain.pem -noout -enddate"
+    depends_on: "renew"
 
   - id: reload
     run: "nginx -t && systemctl reload nginx"
+    depends_on: "verify"
 
   - id: check
     run: "curl -sI https://example.com | head -1"
+    depends_on: "reload"
     retry: 2

@@ -307,6 +307,84 @@ steps:
 	}
 }
 
+func TestDependsOnField_Scalar(t *testing.T) {
+	input := `
+name: test
+steps:
+  - id: a
+    run: "echo a"
+  - id: b
+    run: "echo b"
+    depends_on: "a"
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(p.Steps[1].DependsOn.Steps) != 1 {
+		t.Fatalf("expected 1 dependency, got %d", len(p.Steps[1].DependsOn.Steps))
+	}
+	if p.Steps[1].DependsOn.Steps[0] != "a" {
+		t.Fatalf("expected dependency %q, got %q", "a", p.Steps[1].DependsOn.Steps[0])
+	}
+}
+
+func TestDependsOnField_Sequence(t *testing.T) {
+	input := `
+name: test
+steps:
+  - id: a
+    run: "echo a"
+  - id: b
+    run: "echo b"
+  - id: c
+    run: "echo c"
+    depends_on: ["a", "b"]
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(p.Steps[2].DependsOn.Steps) != 2 {
+		t.Fatalf("expected 2 dependencies, got %d", len(p.Steps[2].DependsOn.Steps))
+	}
+	if p.Steps[2].DependsOn.Steps[0] != "a" || p.Steps[2].DependsOn.Steps[1] != "b" {
+		t.Fatalf("unexpected dependencies: %v", p.Steps[2].DependsOn.Steps)
+	}
+}
+
+func TestDependsOnField_Empty(t *testing.T) {
+	input := `
+name: test
+steps:
+  - id: a
+    run: "echo a"
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(p.Steps[0].DependsOn.Steps) != 0 {
+		t.Fatalf("expected 0 dependencies, got %d", len(p.Steps[0].DependsOn.Steps))
+	}
+}
+
+func TestDependsOnField_InvalidType(t *testing.T) {
+	input := `
+name: test
+steps:
+  - id: a
+    run: "echo a"
+    depends_on:
+      key: val
+`
+	var p Pipeline
+	err := yaml.Unmarshal([]byte(input), &p)
+	if err == nil {
+		t.Fatal("expected error for mapping depends_on")
+	}
+}
+
 // contains is a tiny helper to avoid importing strings in tests.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchString(s, substr)

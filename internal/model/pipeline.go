@@ -14,12 +14,38 @@ type Pipeline struct {
 }
 
 type Step struct {
-	ID        string     `yaml:"id"`
-	Run       RunField   `yaml:"run"`
-	Parallel  bool       `yaml:"parallel"`
-	Sensitive bool       `yaml:"sensitive"`
-	Retry     int        `yaml:"retry"`
-	Cached    CacheField `yaml:"cached"`
+	ID        string        `yaml:"id"`
+	Run       RunField      `yaml:"run"`
+	DependsOn DependsOnField `yaml:"depends_on"`
+	Sensitive bool          `yaml:"sensitive"`
+	Retry     int           `yaml:"retry"`
+	Cached    CacheField    `yaml:"cached"`
+}
+
+// DependsOnField supports both scalar and sequence YAML forms:
+//   - depends_on: "step_name"
+//   - depends_on: ["a", "b"]
+type DependsOnField struct {
+	Steps []string
+}
+
+func (d *DependsOnField) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		if value.Value != "" {
+			d.Steps = []string{value.Value}
+		}
+		return nil
+	case yaml.SequenceNode:
+		var strs []string
+		if err := value.Decode(&strs); err != nil {
+			return fmt.Errorf("depends_on: %w", err)
+		}
+		d.Steps = strs
+		return nil
+	default:
+		return fmt.Errorf("depends_on: must be a string or list of strings")
+	}
 }
 
 // RunField supports three YAML forms:

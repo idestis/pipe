@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/idestis/pipe/internal/cache"
+	"github.com/idestis/pipe/internal/graph"
 	"github.com/idestis/pipe/internal/logging"
 	"github.com/idestis/pipe/internal/model"
 	"github.com/idestis/pipe/internal/state"
@@ -22,6 +25,8 @@ type Runner struct {
 	log      *logging.Logger
 	envVars  map[string]string
 	ui       *ui.StatusUI // nil in verbose mode
+	envMu    sync.Mutex   // protects envVars
+	stateMu  sync.Mutex   // protects state.Steps and saveState
 }
 
 func New(p *model.Pipeline, rs *state.RunState, log *logging.Logger, vars map[string]string, statusUI *ui.StatusUI) *Runner {
@@ -69,34 +74,199 @@ func (r *Runner) saveState() {
 	}
 }
 
+func (r *Runner) setStepState(id string, ss state.StepState) {
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
+	r.state.Steps[id] = ss
+	r.saveState()
+}
+
+func (r *Runner) getStepState(id string) state.StepState {
+	r.stateMu.Lock()
+	defer r.stateMu.Unlock()
+	return r.state.Steps[id]
+}
+
+func (r *Runner) setEnv(key, value string) {
+	r.envMu.Lock()
+	defer r.envMu.Unlock()
+	r.envVars[key] = value
+}
+
+func (r *Runner) buildEnv() []string {
+	r.envMu.Lock()
+	defer r.envMu.Unlock()
+	return BuildEnv(r.envVars)
+}
+
+// stepProcessCount returns the number of concurrent processes a step will spawn.
+func stepProcessCount(step model.Step) int {
+	switch {
+	case step.Run.IsStrings():
+		return len(step.Run.Strings)
+	case step.Run.IsSubRuns():
+		return len(step.Run.SubRuns)
+	default:
+		return 1
+	}
+}
+
+type stepResult struct {
+	ID  string
+	Err error
+}
+
 func (r *Runner) Run() error {
-	for _, step := range r.pipeline.Steps {
-		if err := r.runStep(step); err != nil {
-			r.state.Status = "failed"
-			now := time.Now()
-			r.state.FinishedAt = &now
-			r.saveState()
-			r.log.Log("pipeline failed at step %q: %v", step.ID, err)
-			if r.ui != nil {
-				r.ui.Finish()
-			}
-			fmt.Fprintf(os.Stderr,
-				"\nPipeline failed. Resume with:\n  pipe %s --resume %s\n\n",
-				r.pipeline.Name, r.state.RunID,
-			)
-			return err
+	g, err := graph.Build(r.pipeline.Steps)
+	if err != nil {
+		return fmt.Errorf("building dependency graph: %w", err)
+	}
+
+	maxParallel := runtime.NumCPU()
+	if v := os.Getenv("PIPE_MAX_PARALLEL"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			maxParallel = n
 		}
 	}
 
+	// Build step lookup
+	stepByID := make(map[string]model.Step)
+	for _, s := range r.pipeline.Steps {
+		stepByID[s.ID] = s
+	}
+
+	// Working copy of in-degree
+	inDeg := make(map[string]int)
+	for id, d := range g.InDegree {
+		inDeg[id] = d
+	}
+
+	total := len(g.Order)
+	results := make(chan stepResult, total)
+	sem := make(chan struct{}, maxParallel)
+	completed := 0
+	failed := make(map[string]bool)
+	var firstErr error
+
+	// Seed ready steps (in-degree == 0)
+	for _, id := range g.Order {
+		if inDeg[id] == 0 {
+			step := stepByID[id]
+			go r.workerRun(step, sem, results)
+		}
+	}
+
+	// Dispatch loop
+	for completed < total {
+		res := <-results
+		completed++
+
+		if res.Err != nil {
+			failed[res.ID] = true
+			if firstErr == nil {
+				firstErr = res.Err
+			}
+			// Cascade-fail all transitive dependents
+			r.cascadeFail(res.ID, g, failed, &completed)
+		} else {
+			// Decrement in-degree of dependents, enqueue newly-ready
+			for _, dep := range g.Dependents[res.ID] {
+				if failed[dep] {
+					continue
+				}
+				inDeg[dep]--
+				if inDeg[dep] == 0 {
+					step := stepByID[dep]
+					go r.workerRun(step, sem, results)
+				}
+			}
+		}
+	}
+
+	if firstErr != nil {
+		r.stateMu.Lock()
+		r.state.Status = "failed"
+		now := time.Now()
+		r.state.FinishedAt = &now
+		r.saveState()
+		r.stateMu.Unlock()
+
+		r.log.Log("pipeline failed: %v", firstErr)
+		if r.ui != nil {
+			r.ui.Finish()
+		}
+		fmt.Fprintf(os.Stderr,
+			"\nPipeline failed. Resume with:\n  pipe %s --resume %s\n\n",
+			r.pipeline.Name, r.state.RunID,
+		)
+		return firstErr
+	}
+
+	r.stateMu.Lock()
 	r.state.Status = "done"
 	now := time.Now()
 	r.state.FinishedAt = &now
 	r.saveState()
+	r.stateMu.Unlock()
+
 	r.log.Log("pipeline %q completed (run %s)", r.pipeline.Name, r.state.RunID)
 	if r.ui != nil {
 		r.ui.Finish()
 	}
 	return nil
+}
+
+// cascadeFail marks all transitive dependents of a failed step as failed.
+func (r *Runner) cascadeFail(failedID string, g *graph.Graph, failedSet map[string]bool, completed *int) {
+	// BFS through dependents
+	queue := []string{failedID}
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+		for _, dep := range g.Dependents[curr] {
+			if failedSet[dep] {
+				continue
+			}
+			failedSet[dep] = true
+			r.log.Log("[%s] skipped (dependency %q failed)", dep, failedID)
+			r.uiStatusStep(findStep(r.pipeline.Steps, dep), ui.Failed)
+
+			// Mark in state
+			r.stateMu.Lock()
+			ss := r.state.Steps[dep]
+			ss.Status = "failed"
+			now := time.Now()
+			ss.At = &now
+			r.state.Steps[dep] = ss
+			r.saveState()
+			r.stateMu.Unlock()
+
+			*completed++
+			queue = append(queue, dep)
+		}
+	}
+}
+
+func findStep(steps []model.Step, id string) model.Step {
+	for _, s := range steps {
+		if s.ID == id {
+			return s
+		}
+	}
+	return model.Step{ID: id}
+}
+
+// workerRun acquires semaphore slots, runs the step, and sends the result.
+func (r *Runner) workerRun(step model.Step, sem chan struct{}, results chan<- stepResult) {
+	slots := stepProcessCount(step)
+	for i := 0; i < slots; i++ {
+		sem <- struct{}{}
+	}
+	err := r.runStep(step)
+	for i := 0; i < slots; i++ {
+		<-sem
+	}
+	results <- stepResult{ID: step.ID, Err: err}
 }
 
 // RestoreEnvFromState rebuilds the env map from a previous run's completed steps.
@@ -141,16 +311,17 @@ func (r *Runner) tryCache(step model.Step) (bool, error) {
 	// Restore env vars from cache
 	if !entry.Sensitive {
 		if entry.Output != "" {
-			r.envVars[EnvKey(step.ID)] = strings.TrimRight(entry.Output, "\n")
+			r.setEnv(EnvKey(step.ID), strings.TrimRight(entry.Output, "\n"))
 		}
 		for _, sub := range entry.SubOutputs {
 			if !sub.Sensitive && sub.Output != "" {
-				r.envVars[EnvKey(step.ID, sub.ID)] = strings.TrimRight(sub.Output, "\n")
+				r.setEnv(EnvKey(step.ID, sub.ID), strings.TrimRight(sub.Output, "\n"))
 			}
 		}
 	}
 
 	// Update run state to done
+	r.stateMu.Lock()
 	ss := r.state.Steps[step.ID]
 	ss.Status = "done"
 	ss.ExitCode = 0
@@ -162,6 +333,7 @@ func (r *Runner) tryCache(step model.Step) (bool, error) {
 	ss.At = &now
 	r.state.Steps[step.ID] = ss
 	r.saveState()
+	r.stateMu.Unlock()
 
 	return true, nil
 }
@@ -190,7 +362,7 @@ func (r *Runner) saveCache(step model.Step, entry *cache.Entry) {
 }
 
 func (r *Runner) runStep(step model.Step) error {
-	ss := r.state.Steps[step.ID]
+	ss := r.getStepState(step.ID)
 
 	// Resume logic: skip done non-sensitive steps
 	if ss.Status == "done" && !step.Sensitive {
@@ -225,10 +397,9 @@ func (r *Runner) runStep(step model.Step) error {
 }
 
 func (r *Runner) runSingle(step model.Step, sl *logging.StepLogger) error {
-	ss := r.state.Steps[step.ID]
+	ss := r.getStepState(step.ID)
 	ss.Status = "running"
-	r.state.Steps[step.ID] = ss
-	r.saveState()
+	r.setStepState(step.ID, ss)
 	r.uiStatus(step.ID, ui.Running)
 
 	sl.Log("%s", step.Run.Single)
@@ -250,8 +421,7 @@ func (r *Runner) runSingle(step model.Step, sl *logging.StepLogger) error {
 		code := exitCode(err)
 		ss.Status = "failed"
 		ss.ExitCode = code
-		r.state.Steps[step.ID] = ss
-		r.saveState()
+		r.setStepState(step.ID, ss)
 		sl.Exit(code)
 		r.uiStatus(step.ID, ui.Failed)
 		return fmt.Errorf("step %q failed: %w", step.ID, err)
@@ -263,12 +433,11 @@ func (r *Runner) runSingle(step model.Step, sl *logging.StepLogger) error {
 	if !step.Sensitive {
 		ss.Output = output
 	}
-	r.state.Steps[step.ID] = ss
-	r.saveState()
+	r.setStepState(step.ID, ss)
 	sl.Exit(0)
 	r.uiStatus(step.ID, ui.Done)
 
-	r.envVars[EnvKey(step.ID)] = strings.TrimRight(output, "\n")
+	r.setEnv(EnvKey(step.ID), strings.TrimRight(output, "\n"))
 
 	cacheOutput := output
 	if step.Sensitive {
@@ -286,10 +455,9 @@ func (r *Runner) runSingle(step model.Step, sl *logging.StepLogger) error {
 }
 
 func (r *Runner) runParallelStrings(step model.Step, sl *logging.StepLogger) error {
-	ss := r.state.Steps[step.ID]
+	ss := r.getStepState(step.ID)
 	ss.Status = "running"
-	r.state.Steps[step.ID] = ss
-	r.saveState()
+	r.setStepState(step.ID, ss)
 
 	var (
 		mu   sync.Mutex
@@ -321,15 +489,13 @@ func (r *Runner) runParallelStrings(step model.Step, sl *logging.StepLogger) err
 
 	if len(errs) > 0 {
 		ss.Status = "failed"
-		r.state.Steps[step.ID] = ss
-		r.saveState()
+		r.setStepState(step.ID, ss)
 		return fmt.Errorf("step %q parallel failures: %s", step.ID, strings.Join(errs, "; "))
 	}
 
 	ss.Status = "done"
 	ss.ExitCode = 0
-	r.state.Steps[step.ID] = ss
-	r.saveState()
+	r.setStepState(step.ID, ss)
 
 	r.saveCache(step, &cache.Entry{
 		StepID:  step.ID,
@@ -340,6 +506,7 @@ func (r *Runner) runParallelStrings(step model.Step, sl *logging.StepLogger) err
 }
 
 func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) error {
+	r.stateMu.Lock()
 	ss := r.state.Steps[step.ID]
 	ss.Status = "running"
 	if ss.SubSteps == nil {
@@ -347,6 +514,7 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 	}
 	r.state.Steps[step.ID] = ss
 	r.saveState()
+	r.stateMu.Unlock()
 
 	var (
 		mu   sync.Mutex
@@ -398,7 +566,7 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 					subState.Output = output
 				}
 				ss.SubSteps[sr.ID] = subState
-				r.envVars[EnvKey(step.ID, sr.ID)] = strings.TrimRight(output, "\n")
+				r.setEnv(EnvKey(step.ID, sr.ID), strings.TrimRight(output, "\n"))
 				subSl.Exit(0)
 				r.uiStatus(rowID, ui.Done)
 			}
@@ -411,15 +579,13 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 
 	if len(errs) > 0 {
 		ss.Status = "failed"
-		r.state.Steps[step.ID] = ss
-		r.saveState()
+		r.setStepState(step.ID, ss)
 		return fmt.Errorf("step %q sub-run failures: %s", step.ID, strings.Join(errs, "; "))
 	}
 
 	ss.Status = "done"
 	ss.ExitCode = 0
-	r.state.Steps[step.ID] = ss
-	r.saveState()
+	r.setStepState(step.ID, ss)
 
 	// Build sub-outputs for cache
 	var subOutputs []cache.SubEntry
@@ -444,7 +610,7 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 
 func (r *Runner) execCapture(cmdStr string, sl *logging.StepLogger) (string, error) {
 	cmd := exec.Command("sh", "-c", cmdStr)
-	cmd.Env = BuildEnv(r.envVars)
+	cmd.Env = r.buildEnv()
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = sl.Writer()
@@ -454,7 +620,7 @@ func (r *Runner) execCapture(cmdStr string, sl *logging.StepLogger) (string, err
 
 func (r *Runner) execNoCapture(cmdStr string, sl *logging.StepLogger) error {
 	cmd := exec.Command("sh", "-c", cmdStr)
-	cmd.Env = BuildEnv(r.envVars)
+	cmd.Env = r.buildEnv()
 	cmd.Stdout = sl.Writer()
 	cmd.Stderr = sl.Writer()
 	return cmd.Run()

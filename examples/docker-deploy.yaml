@@ -11,12 +11,15 @@ steps:
 
   - id: build
     run: "docker build -t myapp:$PIPE_GET_VERSION ."
+    depends_on: "lint"
 
   - id: push
     run: |
       docker tag myapp:$PIPE_GET_VERSION registry.example.com/myapp:$PIPE_GET_VERSION
       docker push registry.example.com/myapp:$PIPE_GET_VERSION
+    depends_on: "build"
 
   - id: deploy
     run: "ssh deploy@prod 'docker pull registry.example.com/myapp:$PIPE_GET_VERSION && docker service update --image registry.example.com/myapp:$PIPE_GET_VERSION myapp'"
+    depends_on: "push"
     retry: 2

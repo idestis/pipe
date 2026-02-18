@@ -2,8 +2,10 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/log"
+	"github.com/idestis/pipe/internal/graph"
 	"github.com/idestis/pipe/internal/hub"
 	"github.com/idestis/pipe/internal/parser"
 	"github.com/idestis/pipe/internal/resolve"
@@ -52,6 +54,17 @@ var inspectCmd = &cobra.Command{
 			fmt.Printf("Description: %s\n", pipeline.Description)
 		}
 		fmt.Printf("Steps:       %d\n", len(pipeline.Steps))
+
+		// Build graph for dependency info
+		g, _ := graph.Build(pipeline.Steps)
+		for _, step := range pipeline.Steps {
+			deps := ""
+			if g != nil && len(g.Deps[step.ID]) > 0 {
+				deps = fmt.Sprintf("  (depends on: %s)", strings.Join(g.Deps[step.ID], ", "))
+			}
+			fmt.Printf("  - %s%s\n", step.ID, deps)
+		}
+
 		fmt.Printf("Vars:        %d\n", len(pipeline.Vars))
 
 		if ref.Kind == resolve.KindHub {

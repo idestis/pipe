@@ -18,6 +18,8 @@ steps:
         run: "GOOS=darwin GOARCH=arm64 go build -ldflags '-s -w -X main.version=$PIPE_GET_VERSION' -o dist/app-darwin-arm64"
       - id: windows
         run: "GOOS=windows GOARCH=amd64 go build -ldflags '-s -w -X main.version=$PIPE_GET_VERSION' -o dist/app-windows-amd64.exe"
+    depends_on: "checks"
 
   - id: checksums
     run: "cd dist && shasum -a 256 * > checksums.txt && cat checksums.txt"
+    depends_on: "build"

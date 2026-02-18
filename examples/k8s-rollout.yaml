@@ -12,9 +12,11 @@ steps:
 
   - id: deploy
     run: "kubectl set image deployment/myapp myapp=gcr.io/my-project/myapp:$PIPE_GET_SHA -n production"
+    depends_on: "build-and-push"
 
   - id: wait
     run: "kubectl rollout status deployment/myapp -n production --timeout=120s"
+    depends_on: "deploy"
     retry: 1
 
   - id: verify
@@ -23,3 +25,4 @@ steps:
         run: "kubectl get pods -n production -l app=myapp -o wide"
       - id: health
         run: "curl -sf https://myapp.example.com/health"
+    depends_on: "wait"

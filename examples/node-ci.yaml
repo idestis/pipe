@@ -9,9 +9,12 @@ steps:
       - "npm run lint"
       - "npm run typecheck"
       - "npm run test -- --coverage"
+    depends_on: "install"
 
   - id: build
     run: "npm run build"
+    depends_on: "install"
 
   - id: bundle-size
     run: "du -sh dist/ | cut -f1"
+    depends_on: "build"

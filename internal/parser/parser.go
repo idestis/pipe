@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/idestis/pipe/internal/config"
+	"github.com/idestis/pipe/internal/graph"
 	"github.com/idestis/pipe/internal/hub"
 	"github.com/idestis/pipe/internal/model"
 	"github.com/idestis/pipe/internal/resolve"
@@ -68,6 +69,14 @@ func Validate(p *model.Pipeline) error {
 			return fmt.Errorf("step %q: missing run field", s.ID)
 		}
 	}
+
+	// Validate dependency graph (cycles, unknown refs, self-deps)
+	if len(p.Steps) > 0 {
+		if _, err := graph.Build(p.Steps); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

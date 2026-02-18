@@ -423,6 +423,83 @@ steps:
 	}
 }
 
+func TestValidate_CyclicDependency(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "cycle", `
+name: cycle
+steps:
+  - id: a
+    run: "echo a"
+    depends_on: "b"
+  - id: b
+    run: "echo b"
+    depends_on: "a"
+`)
+	_, err := LoadPipeline("cycle")
+	if err == nil {
+		t.Fatal("expected error for cyclic dependency")
+	}
+	if !strings.Contains(err.Error(), "cycle") {
+		t.Fatalf("expected error containing %q, got %q", "cycle", err.Error())
+	}
+}
+
+func TestValidate_UnknownDependsOn(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "unknown-dep", `
+name: unknown-dep
+steps:
+  - id: a
+    run: "echo a"
+    depends_on: "nonexistent"
+`)
+	_, err := LoadPipeline("unknown-dep")
+	if err == nil {
+		t.Fatal("expected error for unknown depends_on ref")
+	}
+	if !strings.Contains(err.Error(), "unknown dependency") {
+		t.Fatalf("expected error containing %q, got %q", "unknown dependency", err.Error())
+	}
+}
+
+func TestValidate_SelfDependency(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "self-dep", `
+name: self-dep
+steps:
+  - id: a
+    run: "echo a"
+    depends_on: "a"
+`)
+	_, err := LoadPipeline("self-dep")
+	if err == nil {
+		t.Fatal("expected error for self-dependency")
+	}
+	if !strings.Contains(err.Error(), "self-dependency") {
+		t.Fatalf("expected error containing %q, got %q", "self-dependency", err.Error())
+	}
+}
+
+func TestValidate_ValidDependsOn(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "valid-deps", `
+name: valid-deps
+steps:
+  - id: a
+    run: "echo a"
+  - id: b
+    run: "echo b"
+    depends_on: "a"
+  - id: c
+    run: "echo c"
+    depends_on: ["a", "b"]
+`)
+	_, err := LoadPipeline("valid-deps")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestValidatePipeline_Invalid(t *testing.T) {
 	dir := overrideFilesDir(t)
 	writeYAML(t, dir, "bad", `
