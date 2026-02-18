@@ -63,3 +63,89 @@ func TestBuildEnv_EmptyMap(t *testing.T) {
 		t.Fatalf("expected %d entries, got %d", len(os.Environ()), len(env))
 	}
 }
+
+func TestVarEnvKey_Lowercase(t *testing.T) {
+	t.Parallel()
+	if got := VarEnvKey("greeting"); got != "PIPE_VAR_GREETING" {
+		t.Fatalf("expected PIPE_VAR_GREETING, got %s", got)
+	}
+}
+
+func TestVarEnvKey_MixedCase(t *testing.T) {
+	t.Parallel()
+	if got := VarEnvKey("DbHost"); got != "PIPE_VAR_DBHOST" {
+		t.Fatalf("expected PIPE_VAR_DBHOST, got %s", got)
+	}
+}
+
+func TestVarEnvKey_Hyphens(t *testing.T) {
+	t.Parallel()
+	if got := VarEnvKey("db-host"); got != "PIPE_VAR_DB_HOST" {
+		t.Fatalf("expected PIPE_VAR_DB_HOST, got %s", got)
+	}
+}
+
+func TestVarEnvKey_Uppercase(t *testing.T) {
+	t.Parallel()
+	if got := VarEnvKey("RECIPIENT"); got != "PIPE_VAR_RECIPIENT" {
+		t.Fatalf("expected PIPE_VAR_RECIPIENT, got %s", got)
+	}
+}
+
+func TestResolveVars_YAMLOnly(t *testing.T) {
+	t.Parallel()
+	yaml := map[string]string{"GREETING": "Hello", "NAME": "World"}
+	got := ResolveVars(yaml, nil)
+	if got["PIPE_VAR_GREETING"] != "Hello" {
+		t.Fatalf("expected PIPE_VAR_GREETING=Hello, got %q", got["PIPE_VAR_GREETING"])
+	}
+	if got["PIPE_VAR_NAME"] != "World" {
+		t.Fatalf("expected PIPE_VAR_NAME=World, got %q", got["PIPE_VAR_NAME"])
+	}
+}
+
+func TestResolveVars_EnvOverride(t *testing.T) {
+	t.Setenv("PIPE_VAR_NAME", "EnvValue")
+	yaml := map[string]string{"NAME": "Default"}
+	got := ResolveVars(yaml, nil)
+	if got["PIPE_VAR_NAME"] != "EnvValue" {
+		t.Fatalf("expected PIPE_VAR_NAME=EnvValue, got %q", got["PIPE_VAR_NAME"])
+	}
+}
+
+func TestResolveVars_CLIOverride(t *testing.T) {
+	t.Parallel()
+	yaml := map[string]string{"NAME": "Default"}
+	cli := map[string]string{"NAME": "CLIValue"}
+	got := ResolveVars(yaml, cli)
+	if got["PIPE_VAR_NAME"] != "CLIValue" {
+		t.Fatalf("expected PIPE_VAR_NAME=CLIValue, got %q", got["PIPE_VAR_NAME"])
+	}
+}
+
+func TestResolveVars_CLIWinsOverEnv(t *testing.T) {
+	t.Setenv("PIPE_VAR_NAME", "EnvValue")
+	yaml := map[string]string{"NAME": "Default"}
+	cli := map[string]string{"NAME": "CLIValue"}
+	got := ResolveVars(yaml, cli)
+	if got["PIPE_VAR_NAME"] != "CLIValue" {
+		t.Fatalf("expected PIPE_VAR_NAME=CLIValue, got %q", got["PIPE_VAR_NAME"])
+	}
+}
+
+func TestResolveVars_CLIIntroducesNewKey(t *testing.T) {
+	t.Parallel()
+	cli := map[string]string{"NEW_KEY": "newval"}
+	got := ResolveVars(nil, cli)
+	if got["PIPE_VAR_NEW_KEY"] != "newval" {
+		t.Fatalf("expected PIPE_VAR_NEW_KEY=newval, got %q", got["PIPE_VAR_NEW_KEY"])
+	}
+}
+
+func TestResolveVars_NilMaps(t *testing.T) {
+	t.Parallel()
+	got := ResolveVars(nil, nil)
+	if len(got) != 0 {
+		t.Fatalf("expected empty map, got %v", got)
+	}
+}

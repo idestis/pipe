@@ -249,6 +249,64 @@ steps:
 	}
 }
 
+func TestPipeline_WithVars(t *testing.T) {
+	input := `
+name: with-vars
+vars:
+  GREETING: "Hello"
+  DB_HOST: "localhost"
+steps:
+  - id: greet
+    run: "echo $PIPE_VAR_GREETING"
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(p.Vars) != 2 {
+		t.Fatalf("expected 2 vars, got %d", len(p.Vars))
+	}
+	if p.Vars["GREETING"] != "Hello" {
+		t.Fatalf("expected GREETING=%q, got %q", "Hello", p.Vars["GREETING"])
+	}
+	if p.Vars["DB_HOST"] != "localhost" {
+		t.Fatalf("expected DB_HOST=%q, got %q", "localhost", p.Vars["DB_HOST"])
+	}
+}
+
+func TestPipeline_WithoutVars(t *testing.T) {
+	input := `
+name: no-vars
+steps:
+  - id: hello
+    run: "echo hi"
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.Vars != nil {
+		t.Fatalf("expected nil vars, got %v", p.Vars)
+	}
+}
+
+func TestPipeline_EmptyVars(t *testing.T) {
+	input := `
+name: empty-vars
+vars: {}
+steps:
+  - id: hello
+    run: "echo hi"
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(p.Vars) != 0 {
+		t.Fatalf("expected 0 vars, got %d", len(p.Vars))
+	}
+}
+
 // contains is a tiny helper to avoid importing strings in tests.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchString(s, substr)

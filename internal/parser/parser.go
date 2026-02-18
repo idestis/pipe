@@ -43,6 +43,12 @@ func LoadPipeline(name string) (*model.Pipeline, error) {
 // Validate checks a pipeline for structural errors such as missing or
 // duplicate step IDs and missing run fields.
 func Validate(p *model.Pipeline) error {
+	for key := range p.Vars {
+		if !validVarKey(key) {
+			return fmt.Errorf("invalid var key %q — use only letters, digits, hyphens, and underscores", key)
+		}
+	}
+
 	ids := make(map[string]bool)
 	for i, s := range p.Steps {
 		if s.ID == "" {
@@ -100,6 +106,23 @@ func Warnings(p *model.Pipeline) []string {
 		}
 	}
 	return warns
+}
+
+// validVarKey checks that a variable key contains only letters, digits, hyphens,
+// and underscores, and is non-empty.
+func validVarKey(key string) bool {
+	if len(key) == 0 {
+		return false
+	}
+	for _, c := range key {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '-' || c == '_':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // envKey mirrors runner.EnvKey: joins parts with _, replaces hyphens, uppercases.

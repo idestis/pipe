@@ -22,12 +22,16 @@ type Runner struct {
 	envVars  map[string]string
 }
 
-func New(p *model.Pipeline, rs *state.RunState, log *logging.Logger) *Runner {
+func New(p *model.Pipeline, rs *state.RunState, log *logging.Logger, vars map[string]string) *Runner {
+	env := make(map[string]string)
+	for k, v := range vars {
+		env[k] = v
+	}
 	return &Runner{
 		pipeline: p,
 		state:    rs,
 		log:      log,
-		envVars:  make(map[string]string),
+		envVars:  env,
 	}
 }
 

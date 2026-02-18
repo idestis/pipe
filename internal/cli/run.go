@@ -13,7 +13,7 @@ import (
 	"github.com/idestis/pipe/internal/state"
 )
 
-func runPipeline(name string) error {
+func runPipeline(name string, overrides map[string]string) error {
 	pipeline, err := parser.LoadPipeline(name)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -63,7 +63,8 @@ func runPipeline(name string) error {
 		return fmt.Errorf("%s", friendlyError(err))
 	}
 
-	r := runner.New(pipeline, rs, plog)
+	vars := runner.ResolveVars(pipeline.Vars, overrides)
+	r := runner.New(pipeline, rs, plog, vars)
 	if resumeFlag != "" {
 		r.RestoreEnvFromState()
 	}

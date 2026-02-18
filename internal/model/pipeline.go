@@ -7,9 +7,10 @@ import (
 )
 
 type Pipeline struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
-	Steps       []Step `yaml:"steps"`
+	Name        string            `yaml:"name"`
+	Description string            `yaml:"description"`
+	Vars        map[string]string `yaml:"vars"`
+	Steps       []Step            `yaml:"steps"`
 }
 
 type Step struct {

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -23,6 +24,41 @@ func validName(name string) bool {
 		}
 	}
 	return true
+}
+
+// validVarKey checks that a variable key contains only letters, digits, hyphens,
+// and underscores, and is non-empty.
+func validVarKey(key string) bool {
+	if len(key) == 0 {
+		return false
+	}
+	for _, c := range key {
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '-' || c == '_':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// parseVarOverrides parses KEY=value pairs from CLI args into a map.
+func parseVarOverrides(args []string) (map[string]string, error) {
+	overrides := make(map[string]string)
+	for _, arg := range args {
+		idx := strings.IndexByte(arg, '=')
+		if idx < 0 {
+			return nil, fmt.Errorf("invalid variable override %q — expected KEY=value", arg)
+		}
+		key := arg[:idx]
+		value := arg[idx+1:]
+		if !validVarKey(key) {
+			return nil, fmt.Errorf("invalid variable key %q — use only letters, digits, hyphens, and underscores", key)
+		}
+		overrides[key] = value
+	}
+	return overrides, nil
 }
 
 // friendlyError converts common OS errors into user-friendly messages.

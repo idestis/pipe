@@ -37,6 +37,8 @@ var initCmd = &cobra.Command{
 
 		template := fmt.Sprintf(`name: %s
 description: ""
+# vars:
+#   GREETING: "Hello"
 steps:
   - id: hello
     run: "echo Hello from %s"

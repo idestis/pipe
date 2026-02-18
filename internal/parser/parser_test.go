@@ -367,6 +367,62 @@ steps:
 	}
 }
 
+func TestValidate_ValidVarKeys(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "goodvars", `
+name: goodvars
+vars:
+  GREETING: "Hello"
+  db-host: "localhost"
+  my_var_2: "val"
+steps:
+  - id: a
+    run: "echo hi"
+`)
+	_, err := LoadPipeline("goodvars")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestValidate_EmptyVarKey(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "emptyvar", `
+name: emptyvar
+vars:
+  "": "value"
+steps:
+  - id: a
+    run: "echo hi"
+`)
+	_, err := LoadPipeline("emptyvar")
+	if err == nil {
+		t.Fatal("expected error for empty var key")
+	}
+	if !strings.Contains(err.Error(), "invalid var key") {
+		t.Fatalf("expected error containing %q, got %q", "invalid var key", err.Error())
+	}
+}
+
+func TestValidate_InvalidVarKeyChars(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "badvar", `
+name: badvar
+vars:
+  "my.var": "value"
+steps:
+  - id: a
+    run: "echo hi"
+`)
+	_, err := LoadPipeline("badvar")
+	if err == nil {
+		t.Fatal("expected error for invalid var key chars")
+	}
+	if !strings.Contains(err.Error(), "invalid var key") {
+		t.Fatalf("expected error containing %q, got %q", "invalid var key", err.Error())
+	}
+}
+
 func TestValidatePipeline_Invalid(t *testing.T) {
 	dir := overrideFilesDir(t)
 	writeYAML(t, dir, "bad", `

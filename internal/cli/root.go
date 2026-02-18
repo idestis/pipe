@@ -10,9 +10,10 @@ import (
 var version = "dev"
 
 var resumeFlag string
+var apiURL string
 
 var rootCmd = &cobra.Command{
-	Use:   "pipe",
+	Use:   "pipe <pipeline> [-- KEY=value ...]",
 	Short: "A lightweight pipeline runner",
 	Long:  "pipe runs local automation pipelines defined in YAML.",
 	Args:  cobra.ArbitraryArgs,
@@ -20,7 +21,11 @@ var rootCmd = &cobra.Command{
 		if len(args) == 0 {
 			return cmd.Help()
 		}
-		return runPipeline(args[0])
+		overrides, err := parseVarOverrides(args[1:])
+		if err != nil {
+			return err
+		}
+		return runPipeline(args[0], overrides)
 	},
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -36,10 +41,22 @@ func init() {
 	rootCmd.Flags().StringVar(&resumeFlag, "resume", "", "resume a previous run by ID")
 	rootCmd.SetVersionTemplate("pipe-{{.Version}}\n")
 
+	cobra.OnInitialize(initConfig)
+
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(cacheCmd)
+	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(logoutCmd)
+}
+
+func initConfig() {
+	if v := os.Getenv("PIPEHUB_URL"); v != "" {
+		apiURL = v
+		return
+	}
+	apiURL = "https://pipehub.net"
 }
 
 // SetVersion sets the version string displayed by --version.
