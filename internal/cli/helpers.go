@@ -4,12 +4,32 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/idestis/pipe/internal/auth"
 	"github.com/idestis/pipe/internal/hub"
 	"github.com/spf13/cobra"
 )
+
+var (
+	tagRegex             = regexp.MustCompile(`^[a-z0-9]([a-z0-9.\-]*[a-z0-9])?$`)
+	consecutiveSpecialRe = regexp.MustCompile(`[.\-]{2}`)
+)
+
+func validTag(tag string) error {
+	if len(tag) == 0 || len(tag) > 128 {
+		return fmt.Errorf("must be 1-128 characters")
+	}
+	if !tagRegex.MatchString(tag) {
+		return fmt.Errorf("must start and end with a lowercase letter or digit, and contain only lowercase letters, digits, hyphens, and dots")
+	}
+	if consecutiveSpecialRe.MatchString(tag) {
+		return fmt.Errorf("must not contain consecutive hyphens or dots")
+	}
+	return nil
+}
 
 func validName(name string) bool {
 	if len(name) == 0 {
@@ -94,6 +114,14 @@ func unwrapYAMLError(err error) error {
 	return err
 }
 
+// short safely truncates s to at most n characters for display.
+func short(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
+}
+
 func exactArgs(n int, usage string) cobra.PositionalArgs {
 	return func(cmd *cobra.Command, args []string) error {
 		if len(args) != n {
@@ -142,11 +170,18 @@ func requireAuth() (*auth.Credentials, error) {
 	return creds, nil
 }
 
+// newDefaultHubClient creates an unauthenticated hub API client.
+func newDefaultHubClient() *hub.Client {
+	log.Debug("creating unauthenticated hub client", "baseURL", apiURL)
+	return hub.NewClient(apiURL, "")
+}
+
 // newHubClient creates a hub API client from stored credentials.
 func newHubClient(creds *auth.Credentials) *hub.Client {
 	baseURL := creds.APIBaseURL
 	if baseURL == "" {
 		baseURL = apiURL
 	}
+	log.Debug("creating authenticated hub client", "baseURL", baseURL)
 	return hub.NewClient(baseURL, creds.APIKey)
 }

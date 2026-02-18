@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/idestis/pipe/internal/config"
 	"github.com/idestis/pipe/internal/hub"
 )
@@ -45,6 +46,7 @@ func ParsePipeArg(arg string) (owner, name, tag string) {
 	} else {
 		name = arg
 	}
+	log.Debug("ParsePipeArg", "owner", owner, "name", name, "tag", tag)
 	return
 }
 
@@ -52,9 +54,11 @@ func ParsePipeArg(arg string) (owner, name, tag string) {
 func Resolve(input string) (*PipeRef, error) {
 	owner, name, tag := ParsePipeArg(input)
 	alias := ""
+	log.Debug("resolving pipe", "input", input, "owner", owner, "name", name, "tag", tag)
 
 	// Step 1: Check aliases (only for plain names without owner)
 	if owner == "" {
+		log.Debug("checking alias", "name", name)
 		target, err := GetAlias(name)
 		if err != nil {
 			return nil, err
@@ -62,6 +66,7 @@ func Resolve(input string) (*PipeRef, error) {
 		if target != "" {
 			alias = name
 			owner, name, _ = ParsePipeArg(target)
+			log.Debug("alias resolved", "alias", alias, "target", target, "owner", owner, "name", name)
 			// Keep original tag if user specified one; otherwise use resolved tag
 			// (ParsePipeArg on target might return a tag from alias, but we prefer user's tag)
 		}
@@ -69,11 +74,13 @@ func Resolve(input string) (*PipeRef, error) {
 
 	// Step 2: Hub pipe (has owner)
 	if owner != "" {
+		log.Debug("checking hub index", "owner", owner, "name", name)
 		idx, err := hub.LoadIndex(owner, name)
 		if err != nil {
 			return nil, err
 		}
 		if idx != nil {
+			log.Debug("hub index found", "owner", owner, "name", name, "tags", len(idx.Tags), "activeTag", idx.ActiveTag)
 			if tag == "" {
 				// Read HEAD ref to determine what HEAD points to
 				headRef, err := hub.ReadHeadRef(owner, name)
@@ -82,6 +89,11 @@ func Resolve(input string) (*PipeRef, error) {
 						// HEAD points to a blob — use blob path directly
 						blobPath := hub.BlobPath(owner, name, headRef.Value)
 						if _, serr := os.Stat(blobPath); serr == nil {
+							shortSHA := headRef.Value
+						if len(shortSHA) > 12 {
+							shortSHA = shortSHA[:12]
+						}
+						log.Debug("resolved to hub blob", "owner", owner, "name", name, "sha256", shortSHA)
 							return &PipeRef{
 								Kind:  KindHub,
 								Name:  owner + "/" + name,
@@ -103,6 +115,7 @@ func Resolve(input string) (*PipeRef, error) {
 			}
 			path := hub.ContentPath(owner, name, tag)
 			if _, err := os.Stat(path); err == nil {
+				log.Debug("resolved to hub tag", "owner", owner, "name", name, "tag", tag, "path", path)
 				return &PipeRef{
 					Kind:  KindHub,
 					Name:  owner + "/" + name,
@@ -116,12 +129,14 @@ func Resolve(input string) (*PipeRef, error) {
 			return nil, fmt.Errorf("tag %q not pulled for %s/%s\n  run \"pipe pull %s/%s:%s\" first", tag, owner, name, owner, name, tag)
 		}
 		// No index — this hub pipe hasn't been pulled
-		return nil, fmt.Errorf("pipe %q not found\n  run \"pipe pull %s/%s\" to get it from PipeHub, or \"pipe list\" to see local pipes", owner+"/"+name, owner, name)
+		return nil, fmt.Errorf("pipe %q not found\n  run \"pipe pull %s/%s\" to get it from Pipe Hub, or \"pipe list\" to see local pipes", owner+"/"+name, owner, name)
 	}
 
 	// Step 3: Local pipe
+	log.Debug("checking local pipe", "name", name)
 	path := filepath.Join(config.FilesDir, name+".yaml")
 	if _, err := os.Stat(path); err == nil {
+		log.Debug("resolved to local pipe", "name", name, "path", path)
 		return &PipeRef{
 			Kind: KindLocal,
 			Name: name,

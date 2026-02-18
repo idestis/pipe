@@ -45,11 +45,13 @@ var initCmd = &cobra.Command{
 }
 
 func initLocalPipe(name string) error {
+	log.Debug("creating local pipe directory", "dir", config.FilesDir)
 	if err := os.MkdirAll(config.FilesDir, 0o755); err != nil {
 		return fmt.Errorf("%s", friendlyError(err))
 	}
 
 	path := filepath.Join(config.FilesDir, name+".yaml")
+	log.Debug("checking for existing pipeline", "path", path)
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("pipeline %q already exists at %s", name, path)
 	}
@@ -71,6 +73,7 @@ steps:
 }
 
 func initHubPipe(owner, name string) error {
+	log.Debug("checking for existing hub index", "owner", owner, "name", name)
 	idx, _ := hub.LoadIndex(owner, name)
 	if idx != nil {
 		return fmt.Errorf("hub pipe %s/%s already exists", owner, name)
@@ -88,14 +91,17 @@ steps:
 `, displayName, displayName)
 
 	content := []byte(template)
+	log.Debug("saving hub content", "owner", owner, "name", name, "tag", tag, "size", len(content))
 	if err := hub.SaveContent(owner, name, tag, content); err != nil {
 		return fmt.Errorf("saving content: %w", err)
 	}
 
 	sha, md5sum := hub.ComputeChecksums(content)
+	log.Debug("content checksums", "sha256", short(sha, 12), "md5", short(md5sum, 12))
 	if err := hub.UpdateIndex(owner, name, tag, sha, md5sum, int64(len(content))); err != nil {
 		return fmt.Errorf("creating index: %w", err)
 	}
+	log.Debug("index created", "owner", owner, "name", name, "tag", tag)
 
 	path := hub.ContentPath(owner, name, tag)
 	log.Info("created hub pipeline", "path", path)
@@ -103,8 +109,9 @@ steps:
 	// Create alias if name doesn't conflict with a local pipeline or reserved word
 	simpleName := strings.ToLower(name)
 	localPath := filepath.Join(config.FilesDir, name+".yaml")
+	log.Debug("checking alias eligibility", "simpleName", simpleName, "localPath", localPath)
 	if reservedNames[simpleName] {
-		// skip silently
+		log.Debug("skipping alias, reserved name", "name", simpleName)
 	} else if _, err := os.Stat(localPath); err == nil {
 		log.Warn("skipping alias — local pipeline with the same name exists", "name", name)
 	} else {

@@ -18,6 +18,7 @@ func showPipelineHelp(name string) error {
 	if err != nil {
 		return err
 	}
+	log.Debug("resolved pipeline for help", "name", ref.Name, "kind", ref.Kind, "path", ref.Path)
 
 	pipeline, err := parser.LoadPipelineFromPath(ref.Path, ref.Name)
 	if err != nil {
@@ -68,9 +69,11 @@ func runPipeline(name string, overrides map[string]string) error {
 	if err != nil {
 		return err
 	}
+	log.Debug("resolved pipeline", "name", ref.Name, "kind", ref.Kind, "path", ref.Path, "tag", ref.Tag)
 
 	// For hub pipes, check for local modifications
 	if ref.Kind == resolve.KindHub {
+		log.Debug("checking hub pipe integrity", "owner", ref.Owner, "name", ref.Pipe, "tag", ref.Tag)
 		dirty, err := hub.IsDirty(ref.Owner, ref.Pipe, ref.Tag)
 		if err != nil {
 			log.Warn("could not check integrity", "err", err)
@@ -91,6 +94,7 @@ func runPipeline(name string, overrides map[string]string) error {
 		}
 		return err
 	}
+	log.Debug("parsed pipeline", "name", pipeline.Name, "steps", len(pipeline.Steps), "vars", len(pipeline.Vars))
 
 	for _, w := range parser.Warnings(pipeline) {
 		log.Warn(w)
@@ -102,13 +106,16 @@ func runPipeline(name string, overrides map[string]string) error {
 
 	var rs *state.RunState
 	if resumeFlag != "" {
+		log.Debug("resuming run", "runID", resumeFlag)
 		rs, err = state.Load(pipeline.Name, resumeFlag)
 		if err != nil {
 			return err
 		}
 		rs.Status = "running"
+		log.Debug("loaded run state", "runID", rs.RunID, "status", rs.Status)
 	} else {
 		rs = state.NewRunState(pipeline.Name)
+		log.Debug("new run state", "runID", rs.RunID)
 	}
 
 	plog, err := logging.New(pipeline.Name, rs.RunID)
@@ -128,6 +135,7 @@ func runPipeline(name string, overrides map[string]string) error {
 	}
 
 	vars := runner.ResolveVars(pipeline.Vars, overrides)
+	log.Debug("resolved variables", "total", len(vars), "overrides", len(overrides))
 	r := runner.New(pipeline, rs, plog, vars)
 	if resumeFlag != "" {
 		r.RestoreEnvFromState()

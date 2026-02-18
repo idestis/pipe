@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/charmbracelet/log"
 	"github.com/idestis/pipe/internal/hub"
 	"github.com/idestis/pipe/internal/parser"
 	"github.com/idestis/pipe/internal/resolve"
@@ -18,11 +19,27 @@ var inspectCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		log.Debug("resolved pipeline", "name", ref.Name, "kind", ref.Kind, "path", ref.Path)
 
 		pipeline, err := parser.LoadPipelineFromPath(ref.Path, ref.Name)
 		if err != nil {
 			return fmt.Errorf("loading pipeline: %w", err)
 		}
+		log.Debug("loaded pipeline", "steps", len(pipeline.Steps), "vars", len(pipeline.Vars))
+
+		// Pre-load hub data so all debug logs fire before user-facing output
+		var headRef *hub.HeadRef
+		var idx *hub.Index
+		if ref.Kind == resolve.KindHub {
+			headRef, _ = hub.ReadHeadRef(ref.Owner, ref.Pipe)
+			log.Debug("HEAD ref", "owner", ref.Owner, "pipe", ref.Pipe, "ref", headRef)
+			idx, _ = hub.LoadIndex(ref.Owner, ref.Pipe)
+			if idx != nil {
+				log.Debug("index loaded", "tags", len(idx.Tags), "activeTag", idx.ActiveTag)
+			}
+		}
+
+		// --- user-facing output below ---
 
 		fmt.Printf("Name:        %s\n", ref.Name)
 		if ref.Alias != "" {
@@ -38,19 +55,16 @@ var inspectCmd = &cobra.Command{
 		fmt.Printf("Vars:        %d\n", len(pipeline.Vars))
 
 		if ref.Kind == resolve.KindHub {
-			// Show HEAD pointer
-			headRef, _ := hub.ReadHeadRef(ref.Owner, ref.Pipe)
 			if headRef != nil {
 				if headRef.Kind == hub.HeadKindBlob {
-					fmt.Printf("HEAD:        sha256:%s (detached)\n", headRef.Value[:12])
+					fmt.Printf("HEAD:        sha256:%s (detached)\n", short(headRef.Value, 12))
 				} else {
 					fmt.Printf("HEAD:        %s\n", headRef.Value)
 				}
 			}
 			fmt.Printf("Active Tag:  %s\n", ref.Tag)
 
-			idx, err := hub.LoadIndex(ref.Owner, ref.Pipe)
-			if err == nil && idx != nil && len(idx.Tags) > 0 {
+			if idx != nil && len(idx.Tags) > 0 {
 				fmt.Println("\nPulled Tags:")
 				for tag, rec := range idx.Tags {
 					active := ""
@@ -81,7 +95,7 @@ var inspectCmd = &cobra.Command{
 					}
 
 					fmt.Printf("  %-16s [%s] sha256=%s%s%s%s%s\n",
-						tag, tagType, rec.SHA256[:12], pulledAt, createdAt, active, dirtyMarker)
+						tag, tagType, short(rec.SHA256, 12), pulledAt, createdAt, active, dirtyMarker)
 				}
 			}
 		}

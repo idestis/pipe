@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/charmbracelet/log"
 )
 
-// Client communicates with the PipeHub API.
+// Client communicates with the Pipe Hub API.
 type Client struct {
 	BaseURL    string
 	APIKey     string
@@ -29,11 +31,20 @@ func NewClient(baseURL, apiKey string) *Client {
 }
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	if c.APIKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.APIKey)
+	}
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	return c.HTTPClient.Do(req)
+	log.Debug("hub API request", "method", req.Method, "url", req.URL.String())
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		log.Debug("hub API request failed", "method", req.Method, "url", req.URL.String(), "err", err)
+		return nil, err
+	}
+	log.Debug("hub API response", "method", req.Method, "url", req.URL.String(), "status", resp.StatusCode)
+	return resp, nil
 }
 
 // GetPipe retrieves pipe metadata. Returns nil metadata and no error if 404.
@@ -59,6 +70,7 @@ func (c *Client) GetPipe(owner, name string) (*PipeMetadata, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&meta); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
+	log.Debug("GetPipe result", "owner", owner, "name", name, "found", true)
 	return &meta, nil
 }
 
@@ -86,6 +98,7 @@ func (c *Client) CreatePipe(owner string, req *CreatePipeRequest) (*PipeMetadata
 	if err := json.NewDecoder(resp.Body).Decode(&meta); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
+	log.Debug("CreatePipe result", "owner", owner, "name", meta.Name)
 	return &meta, nil
 }
 
@@ -102,6 +115,9 @@ func (c *Client) GetTag(owner, name, tag string) (*TagDetail, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, readError(resp)
 	}
@@ -109,6 +125,11 @@ func (c *Client) GetTag(owner, name, tag string) (*TagDetail, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&detail); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
+	sha := detail.SHA256
+	if len(sha) > 12 {
+		sha = sha[:12]
+	}
+	log.Debug("GetTag result", "tag", tag, "sha256", sha, "size", detail.SizeBytes)
 	return &detail, nil
 }
 
@@ -128,7 +149,12 @@ func (c *Client) DownloadTag(owner, name, tag string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, readError(resp)
 	}
-	return io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Debug("DownloadTag result", "tag", tag, "size", len(data))
+	return data, nil
 }
 
 // DownloadByDigest downloads the YAML content by content digest.
@@ -147,7 +173,12 @@ func (c *Client) DownloadByDigest(owner, name, digest string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, readError(resp)
 	}
-	return io.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	log.Debug("DownloadByDigest result", "digest", digest, "size", len(data))
+	return data, nil
 }
 
 // Push pushes YAML content and assigns the given tags.
@@ -174,6 +205,7 @@ func (c *Client) Push(owner, name string, content []byte, tags []string) (*PushR
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
+	log.Debug("Push result", "digest", result.Digest, "tags", result.Tags, "created", result.Created, "size", result.SizeBytes)
 	return &result, nil
 }
 

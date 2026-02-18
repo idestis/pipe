@@ -11,6 +11,7 @@ var version = "dev"
 
 var resumeFlag string
 var apiURL string
+var verbosity int
 
 var rootCmd = &cobra.Command{
 	Use:   "pipe <pipeline> [-- KEY=value ...]",
@@ -46,10 +47,11 @@ func init() {
 	styles.Levels[log.ErrorLevel] = styles.Levels[log.ErrorLevel].SetString("ERROR").MaxWidth(5)
 	log.SetStyles(styles)
 
+	rootCmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v", "increase output verbosity (-v verbose, -vv debug)")
 	rootCmd.Flags().StringVar(&resumeFlag, "resume", "", "resume a previous run by ID")
 	rootCmd.SetVersionTemplate("pipe-{{.Version}}\n")
 
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig, initVerbosity)
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(listCmd)
@@ -67,12 +69,21 @@ func init() {
 	rootCmd.AddCommand(rmCmd)
 }
 
+func initVerbosity() {
+	if verbosity >= 2 {
+		log.SetLevel(log.DebugLevel)
+		log.Debug("debug logging enabled")
+	}
+}
+
 func initConfig() {
 	if v := os.Getenv("PIPEHUB_URL"); v != "" {
 		apiURL = v
+		log.Debug("API URL from environment", "url", apiURL)
 		return
 	}
-	apiURL = "https://pipehub.net"
+	apiURL = "https://hub.getpipe.dev"
+	log.Debug("API URL default", "url", apiURL)
 }
 
 // SetVersion sets the version string displayed by --version.

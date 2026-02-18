@@ -21,7 +21,11 @@ type Logger struct {
 
 func New(pipelineName, runID string) (*Logger, error) {
 	ts := time.Now().Format("20060102-150405")
-	filename := fmt.Sprintf("%s-%s-%s.log", pipelineName, runID[:8], ts)
+	rid := runID
+	if len(rid) > 8 {
+		rid = rid[:8]
+	}
+	filename := fmt.Sprintf("%s-%s-%s.log", pipelineName, rid, ts)
 	path := filepath.Join(config.LogDir, filename)
 
 	f, err := os.Create(path)

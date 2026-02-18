@@ -15,7 +15,7 @@ import (
 var mvCmd = &cobra.Command{
 	Use:   "mv <name> <owner>/<name>",
 	Short: "Convert a local pipeline to a hub namespace",
-	Long:  "Converts a local pipeline from ~/.pipe/files/ into the hub layout under ~/.pipe/hub/, enabling tagging, versioning, and pushing to PipeHub.",
+	Long:  "Converts a local pipeline from ~/.pipe/files/ into the hub layout under ~/.pipe/hub/, enabling tagging, versioning, and pushing to Pipe Hub.",
 	Args:  exactArgs(2, "pipe mv <name> <owner>/<name>"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		srcName := args[0]
@@ -60,7 +60,7 @@ var mvCmd = &cobra.Command{
 			}
 
 			log.Info("pipe already exists, imported as untagged blob", "pipe", dstOwner+"/"+dstName)
-			log.Info("HEAD", "ref", "sha256:"+sha[:12])
+			log.Info("HEAD", "ref", "sha256:"+short(sha, 12))
 		} else {
 			// New hub pipe — create with "latest" tag
 			tag := "latest"

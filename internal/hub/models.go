@@ -40,6 +40,7 @@ type PipeMetadata struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	IsPublic    bool   `json:"is_public"`
+	IsMutable   bool   `json:"isMutable"`
 }
 
 // TagDetail is the API response for GET /api/v1/pipes/{owner}/{name}/tags/{tag}.

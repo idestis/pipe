@@ -31,6 +31,7 @@ var switchCmd = &cobra.Command{
 		if owner == "" {
 			return fmt.Errorf("owner required — use \"pipe switch <owner>/<name> [tag]\"")
 		}
+		log.Debug("switch target", "owner", owner, "name", name)
 
 		idx, err := hub.LoadIndex(owner, name)
 		if err != nil {
@@ -39,9 +40,14 @@ var switchCmd = &cobra.Command{
 		if idx == nil || len(idx.Tags) == 0 {
 			return fmt.Errorf("no pulled tags for %s/%s — run \"pipe pull %s/%s\" first", owner, name, owner, name)
 		}
+		log.Debug("loaded index", "tags", len(idx.Tags), "activeTag", idx.ActiveTag)
 
 		// --create / -b: create an editable tag from active tag's or blob's content
 		if switchCreate != "" {
+			log.Debug("create mode", "newTag", switchCreate)
+			if err := validTag(switchCreate); err != nil {
+				return fmt.Errorf("invalid tag %q: %w", switchCreate, err)
+			}
 			if _, ok := idx.Tags[switchCreate]; ok {
 				return fmt.Errorf("tag %q already exists — use \"pipe switch %s/%s %s\" to switch to it", switchCreate, owner, name, switchCreate)
 			}
@@ -54,18 +60,21 @@ var switchCmd = &cobra.Command{
 				if herr != nil || headRef.Kind != hub.HeadKindBlob {
 					return fmt.Errorf("no active tag set for %s/%s", owner, name)
 				}
+				log.Debug("HEAD points to blob", "sha256", short(headRef.Value, 12))
 				blobPath := hub.BlobPath(owner, name, headRef.Value)
 				content, err = os.ReadFile(blobPath)
 				if err != nil {
-					return fmt.Errorf("reading blob %s: %w", headRef.Value[:12], err)
+					return fmt.Errorf("reading blob %s: %w", short(headRef.Value, 12), err)
 				}
-				sourceTag = "sha256:" + headRef.Value[:12]
+				sourceTag = "sha256:" + short(headRef.Value, 12)
 			} else {
+				log.Debug("loading content from active tag", "sourceTag", sourceTag)
 				content, err = hub.LoadContent(owner, name, sourceTag)
 				if err != nil {
 					return fmt.Errorf("reading active tag %q: %w", sourceTag, err)
 				}
 			}
+			log.Debug("source content loaded", "from", sourceTag, "size", len(content))
 
 			// Create as editable (regular file, independent copy)
 			if err := hub.CreateEditableTag(owner, name, switchCreate, content); err != nil {
@@ -73,6 +82,7 @@ var switchCmd = &cobra.Command{
 			}
 
 			sha, md5h := hub.ComputeChecksums(content)
+			log.Debug("editable tag checksums", "sha256", short(sha, 12), "md5", short(md5h, 12))
 			idx.Tags[switchCreate] = hub.TagRecord{
 				SHA256:    sha,
 				MD5:       md5h,
@@ -81,9 +91,11 @@ var switchCmd = &cobra.Command{
 				Editable:  true,
 			}
 			idx.ActiveTag = switchCreate
+			log.Debug("setting HEAD", "tag", switchCreate)
 			if err := hub.SetHead(owner, name, switchCreate); err != nil {
 				return fmt.Errorf("setting HEAD: %w", err)
 			}
+			log.Debug("saving index", "activeTag", switchCreate)
 			if err := hub.SaveIndex(idx); err != nil {
 				return fmt.Errorf("saving index: %w", err)
 			}
@@ -98,20 +110,25 @@ var switchCmd = &cobra.Command{
 		if len(args) >= 2 {
 			// Explicit tag
 			newTag = args[1]
+			log.Debug("explicit tag requested", "tag", newTag)
 			if _, ok := idx.Tags[newTag]; !ok {
 				// Not a known tag — check if it looks like a SHA hex
+				log.Debug("tag not in index, trying blob SHA match", "tag", newTag)
 				matchedSHA, err := matchBlobSHA(owner, name, newTag)
 				if err != nil {
 					return fmt.Errorf("tag %q not pulled — available tags: %s", newTag, tagList(idx))
 				}
+				log.Debug("matched blob SHA", "input", newTag, "fullSHA", short(matchedSHA, 12))
 
 				// Check if HEAD already points to this blob
 				headRef, _ := hub.ReadHeadRef(owner, name)
 				if headRef != nil && headRef.Kind == hub.HeadKindBlob && headRef.Value == matchedSHA {
-					fmt.Printf("%s/%s is already on blob sha256:%s\n", owner, name, matchedSHA[:12])
+					log.Debug("already on this blob", "sha256", short(matchedSHA, 12))
+					fmt.Printf("%s/%s is already on blob sha256:%s\n", owner, name, short(matchedSHA, 12))
 					return nil
 				}
 
+				log.Debug("setting HEAD to blob", "sha256", short(matchedSHA, 12))
 				if err := hub.SetHeadBlob(owner, name, matchedSHA); err != nil {
 					return fmt.Errorf("setting HEAD to blob: %w", err)
 				}
@@ -120,7 +137,7 @@ var switchCmd = &cobra.Command{
 					return fmt.Errorf("saving index: %w", err)
 				}
 
-				log.Info("switched to blob", "pipe", owner+"/"+name, "sha256", matchedSHA[:12])
+				log.Info("switched to blob", "pipe", owner+"/"+name, "sha256", short(matchedSHA, 12))
 				return nil
 			}
 		} else {
@@ -138,7 +155,7 @@ var switchCmd = &cobra.Command{
 			// Show detached HEAD indicator if on a blob
 			headRef, _ := hub.ReadHeadRef(owner, name)
 			if headRef != nil && headRef.Kind == hub.HeadKindBlob {
-				fmt.Printf("  * (detached) sha256:%s\n", headRef.Value[:12])
+				fmt.Printf("  * (detached) sha256:%s\n", short(headRef.Value, 12))
 			}
 
 			fmt.Print("\nSelect tag number: ")
@@ -156,14 +173,17 @@ var switchCmd = &cobra.Command{
 		// Check if already active (tag mode)
 		headRef, _ := hub.ReadHeadRef(owner, name)
 		if headRef != nil && headRef.Kind == hub.HeadKindTag && headRef.Value == newTag {
+			log.Debug("already on this tag", "tag", newTag)
 			fmt.Printf("%s/%s is already on tag %q\n", owner, name, newTag)
 			return nil
 		}
 
+		log.Debug("switching to tag", "from", idx.ActiveTag, "to", newTag)
 		idx.ActiveTag = newTag
 		if err := hub.SetHead(owner, name, newTag); err != nil {
 			return fmt.Errorf("setting HEAD: %w", err)
 		}
+		log.Debug("saving index", "activeTag", newTag)
 		if err := hub.SaveIndex(idx); err != nil {
 			return fmt.Errorf("saving index: %w", err)
 		}
@@ -225,7 +245,7 @@ func matchBlobSHA(owner, name, sha string) (string, error) {
 		if _, err := os.Stat(blobPath); err == nil {
 			return sha, nil
 		}
-		return "", fmt.Errorf("blob %s not found", sha[:12])
+		return "", fmt.Errorf("blob %s not found", short(sha, 12))
 	}
 
 	// Prefix match
