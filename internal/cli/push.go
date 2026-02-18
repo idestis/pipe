@@ -121,9 +121,6 @@ var pushCmd = &cobra.Command{
 		if meta == nil {
 			return fmt.Errorf("pipe %q not found on hub — create it first", owner+"/"+name)
 		}
-		if !meta.IsMutable {
-			return fmt.Errorf("pipe %q is immutable — tags cannot be added or updated", owner+"/"+name)
-		}
 		log.Debug("pipe exists on hub", "pipe", owner+"/"+name)
 
 		localSHA, localMD5 := hub.ComputeChecksums(content)
@@ -144,9 +141,12 @@ var pushCmd = &cobra.Command{
 			log.Debug("tag exists on hub", "tag", t, "remoteDigest", remote.Digest)
 			if remote.Digest == "sha256:"+localSHA {
 				log.Info("tag already up to date", "tag", t, "digest", short(remote.Digest, 19))
+			} else if !meta.IsMutable && t != "latest" {
+				return fmt.Errorf("tag %q already exists on immutable pipe %q with different content — cannot reassign",
+					t, owner+"/"+name)
 			} else {
-				return fmt.Errorf("tag %q already exists with different content (remote %s, local sha256:%s)",
-					t, short(remote.Digest, 19), short(localSHA, 12))
+				log.Debug("tag will be updated", "tag", t, "remote", short(remote.Digest, 19), "local", short(localSHA, 12))
+				newTags = append(newTags, t)
 			}
 		}
 		if len(newTags) == 0 {

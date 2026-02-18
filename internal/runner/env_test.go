@@ -149,3 +149,52 @@ func TestResolveVars_NilMaps(t *testing.T) {
 		t.Fatalf("expected empty map, got %v", got)
 	}
 }
+
+// --- renderVarValue tests ---
+
+func TestRenderVarValue_PlainString(t *testing.T) {
+	t.Parallel()
+	got := renderVarValue("hello world", map[string]string{})
+	if got != "hello world" {
+		t.Fatalf("expected %q, got %q", "hello world", got)
+	}
+}
+
+func TestRenderVarValue_Default(t *testing.T) {
+	t.Parallel()
+	got := renderVarValue(`{{ .MISSING | default "fallback" }}`, map[string]string{})
+	if got != "fallback" {
+		t.Fatalf("expected %q, got %q", "fallback", got)
+	}
+}
+
+func TestRenderVarValue_EnvRef(t *testing.T) {
+	t.Parallel()
+	env := map[string]string{"HOME": "/home/test"}
+	got := renderVarValue("{{ .HOME }}", env)
+	if got != "/home/test" {
+		t.Fatalf("expected %q, got %q", "/home/test", got)
+	}
+}
+
+func TestRenderVarValue_InvalidTemplate(t *testing.T) {
+	t.Parallel()
+	raw := "{{ .foo | bad }}"
+	got := renderVarValue(raw, map[string]string{"foo": "x"})
+	if got != raw {
+		t.Fatalf("expected original %q, got %q", raw, got)
+	}
+}
+
+func TestResolveVars_RenderedDefault(t *testing.T) {
+	t.Parallel()
+	yaml := map[string]string{
+		"WHO": `{{ .USER | default "Anon" }}`,
+	}
+	got := ResolveVars(yaml, nil)
+	val := got["PIPE_VAR_WHO"]
+	// USER may or may not be set; either way the template should resolve.
+	if val == "" || strings.Contains(val, "{{") {
+		t.Fatalf("expected rendered value, got %q", val)
+	}
+}

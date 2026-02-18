@@ -133,6 +133,10 @@ func runPipeline(name string, overrides map[string]string) error {
 	}
 	defer func() { _ = plog.Close() }()
 
+	if err := logging.RotateLogs(pipeline.Name); err != nil {
+		log.Warn("log rotation failed", "err", err)
+	}
+
 	if resumeFlag != "" {
 		plog.Log("resuming pipeline %q (run %s)", pipeline.Name, rs.RunID)
 	} else {
@@ -141,6 +145,12 @@ func runPipeline(name string, overrides map[string]string) error {
 
 	if err := state.Save(rs); err != nil {
 		return fmt.Errorf("%s", friendlyError(err))
+	}
+
+	if resumeFlag == "" {
+		if err := state.RotateStates(pipeline.Name, rs.RunID); err != nil {
+			log.Warn("state rotation failed", "err", err)
+		}
 	}
 
 	vars := runner.ResolveVars(pipeline.Vars, overrides)
