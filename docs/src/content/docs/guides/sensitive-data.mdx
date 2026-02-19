@@ -1,0 +1,51 @@
+---
+title: Sensitive Data
+description: Redact outputs from state files and control caching behavior.
+---
+
+## Marking a step as sensitive
+
+Set `sensitive: true` to exclude a step's output from the run state file:
+
+```yaml
+- id: get-token
+  run: "vault read -field=token secret/deploy"
+  sensitive: true
+```
+
+## What sensitive does
+
+1. **State file**: The step's output is **not** written to `~/.pipe/state/`. Only the exit code is recorded.
+2. **Runtime**: The output is still captured and passed as `PIPE_<STEP_ID>` to subsequent steps during the run.
+3. **Resume**: Sensitive steps are **always re-executed** on `--resume`, even if they succeeded previously, so downstream steps receive the value again.
+
+## Sub-run sensitivity
+
+Named sub-runs support `sensitive` independently:
+
+```yaml
+- id: fetch
+  run:
+    - id: api-version
+      run: "curl -s https://api.example.com/version"
+    - id: db-password
+      run: "aws secretsmanager get-secret-value --secret-id db --query SecretString --output text"
+      sensitive: true
+```
+
+Only `db-password` is redacted — `api-version` output is saved to state normally.
+
+## Interaction with caching
+
+When both `sensitive: true` and `cache: true` are set:
+
+- The cache records the **success** (exit code) but stores **no output**.
+- On a cache hit, the step is skipped entirely — no command runs, and no `PIPE_*` environment variable is set for that step.
+- This is useful for steps like SSO login where you want to cache "I already authenticated" without storing credentials.
+
+```yaml
+- id: sso-login
+  run: "aws sso login"
+  sensitive: true
+  cache: true
+```

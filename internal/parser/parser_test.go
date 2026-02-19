@@ -238,7 +238,7 @@ steps:
   - id: secret
     run: "vault read token"
     sensitive: true
-    cached: true
+    cache: true
 `)
 	p, err := LoadPipeline("warn-cached")
 	if err != nil {
@@ -246,16 +246,16 @@ steps:
 	}
 	warns := Warnings(p)
 	if len(warns) == 0 {
-		t.Fatal("expected warnings for cached + sensitive")
+		t.Fatal("expected warnings for cache + sensitive")
 	}
 	found := false
 	for _, w := range warns {
-		if strings.Contains(w, "cached + sensitive") && strings.Contains(w, "PIPE_SECRET") {
+		if strings.Contains(w, "cache + sensitive") && strings.Contains(w, "PIPE_SECRET") {
 			found = true
 		}
 	}
 	if !found {
-		t.Fatalf("expected warning about cached + sensitive with env var, got: %v", warns)
+		t.Fatalf("expected warning about cache + sensitive with env var, got: %v", warns)
 	}
 }
 
@@ -323,7 +323,7 @@ name: clean
 steps:
   - id: build
     run: "echo build"
-    cached: true
+    cache: true
   - id: deploy
     run: "echo deploy"
 `)

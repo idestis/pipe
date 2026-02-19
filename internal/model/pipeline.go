@@ -19,7 +19,7 @@ type Step struct {
 	DependsOn DependsOnField `yaml:"depends_on"`
 	Sensitive bool          `yaml:"sensitive"`
 	Retry     int           `yaml:"retry"`
-	Cached    CacheField    `yaml:"cached"`
+	Cached    CacheField    `yaml:"cache"`
 }
 
 // DependsOnField supports both scalar and sequence YAML forms:

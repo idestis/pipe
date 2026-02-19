@@ -203,14 +203,14 @@ description: "pipeline with caching"
 steps:
   - id: sso-login
     run: "aws sso login"
-    cached: true
+    cache: true
   - id: build
     run: "npm run build"
-    cached:
+    cache:
       expireAfter: "1h"
   - id: deploy
     run: "deploy --prod"
-    cached:
+    cache:
       expireAfter: "18:10 UTC"
   - id: no-cache
     run: "echo hello"
@@ -222,28 +222,28 @@ steps:
 	if len(p.Steps) != 4 {
 		t.Fatalf("expected 4 steps, got %d", len(p.Steps))
 	}
-	// cached: true
+	// cache: true
 	if !p.Steps[0].Cached.Enabled {
 		t.Fatal("step 0: expected Cached.Enabled == true")
 	}
 	if p.Steps[0].Cached.ExpireAfter != "" {
 		t.Fatalf("step 0: expected empty ExpireAfter, got %q", p.Steps[0].Cached.ExpireAfter)
 	}
-	// cached with duration
+	// cache with duration
 	if !p.Steps[1].Cached.Enabled {
 		t.Fatal("step 1: expected Cached.Enabled == true")
 	}
 	if p.Steps[1].Cached.ExpireAfter != "1h" {
 		t.Fatalf("step 1: expected ExpireAfter %q, got %q", "1h", p.Steps[1].Cached.ExpireAfter)
 	}
-	// cached with absolute time
+	// cache with absolute time
 	if !p.Steps[2].Cached.Enabled {
 		t.Fatal("step 2: expected Cached.Enabled == true")
 	}
 	if p.Steps[2].Cached.ExpireAfter != "18:10 UTC" {
 		t.Fatalf("step 2: expected ExpireAfter %q, got %q", "18:10 UTC", p.Steps[2].Cached.ExpireAfter)
 	}
-	// no cached field
+	// no cache field
 	if p.Steps[3].Cached.Enabled {
 		t.Fatal("step 3: expected Cached.Enabled == false")
 	}

@@ -101,10 +101,10 @@ func Warnings(p *model.Pipeline) []string {
 	}
 
 	for _, s := range p.Steps {
-		// Warn: cached + sensitive means step won't re-execute and env var won't be available
+		// Warn: cache + sensitive means step won't re-execute and env var won't be available
 		if s.Cached.Enabled && s.Sensitive {
 			warns = append(warns, fmt.Sprintf(
-				"step %q: cached + sensitive — step will be skipped on cache hit, output is not stored and $%s will not be set",
+				"step %q: cache + sensitive — step will be skipped on cache hit, output is not stored and $%s will not be set",
 				s.ID, envKey(s.ID),
 			))
 		}

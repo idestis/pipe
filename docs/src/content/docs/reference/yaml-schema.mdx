@@ -1,0 +1,114 @@
+---
+title: Pipeline YAML Schema
+description: Complete field reference for pipeline YAML files.
+---
+
+## Top-level fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | yes | Pipeline name — used as the run command |
+| `description` | `string` | no | Short description shown by `pipe list` |
+| `vars` | `map[string]string` | no | User-defined variables (see [Variables](/guides/variables/)) |
+| `steps` | `[]Step` | yes | Ordered list of steps |
+
+## Step fields
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `id` | `string` | yes | — | Unique step identifier |
+| `run` | `string \| []string \| []SubRun` | yes | — | Command(s) to execute (see [run modes](/guides/writing-pipelines/#three-run-modes)) |
+| `depends_on` | `string \| []string` | no | `[]` | Step ID(s) that must complete first |
+| `sensitive` | `bool` | no | `false` | Exclude output from state files; always re-execute on resume |
+| `retry` | `int` | no | `0` | Number of retries on failure |
+| `cache` | `bool \| CacheConfig` | no | `false` | Cache successful results (see [Caching](/guides/caching/)) |
+
+## SubRun fields
+
+Used inside a `run` list when each item is a mapping:
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `id` | `string` | yes | — | Sub-run identifier (combined with step ID for env var: `PIPE_<STEP>_<SUBRUN>`) |
+| `run` | `string` | yes | — | Command to execute |
+| `sensitive` | `bool` | no | `false` | Exclude this sub-run's output from state files |
+
+## CacheConfig fields
+
+Used when `cache` is a mapping instead of `true`:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `expireAfter` | `string` | yes | Expiry duration or wall-clock time |
+
+### Expiry formats
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| Go duration | `30s`, `10m`, `1h`, `24h` | Relative duration from cache time |
+| Wall-clock time | `18:10 UTC`, `15:00` | Re-run after this time of day |
+
+## DependsOn forms
+
+The `depends_on` field accepts two YAML forms:
+
+```yaml
+# Scalar — single dependency
+depends_on: "build"
+
+# Sequence — multiple dependencies
+depends_on:
+  - "lint"
+  - "test"
+```
+
+## Run forms
+
+The `run` field accepts three YAML forms:
+
+```yaml
+# Scalar — single command (output captured as PIPE_<STEP_ID>)
+run: "echo hello"
+
+# Sequence of strings — parallel commands (output NOT captured)
+run:
+  - "go vet ./..."
+  - "golangci-lint run"
+
+# Sequence of mappings — parallel named sub-runs (output captured per sub-run)
+run:
+  - id: linux
+    run: "GOOS=linux go build -o dist/linux ."
+  - id: darwin
+    run: "GOOS=darwin go build -o dist/darwin ."
+```
+
+## Full example
+
+```yaml
+name: release
+description: "Build and release the project"
+vars:
+  registry: "ghcr.io/myorg"
+steps:
+  - id: get-version
+    run: "git describe --tags --abbrev=0"
+
+  - id: checks
+    run:
+      - "go vet ./..."
+      - "go test -race ./..."
+
+  - id: build
+    run:
+      - id: linux
+        run: "GOOS=linux go build -ldflags '-X main.version=$PIPE_GET_VERSION' -o dist/linux ."
+      - id: darwin
+        run: "GOOS=darwin go build -ldflags '-X main.version=$PIPE_GET_VERSION' -o dist/darwin ."
+    depends_on: "checks"
+
+  - id: push
+    run: "docker push $PIPE_VAR_REGISTRY/app:$PIPE_GET_VERSION"
+    depends_on: "build"
+    retry: 2
+```

@@ -87,7 +87,7 @@ func TestCacheField_InStep(t *testing.T) {
 	input := `
 id: build
 run: "npm run build"
-cached: true
+cache: true
 `
 	var s Step
 	if err := yaml.Unmarshal([]byte(input), &s); err != nil {
@@ -102,7 +102,7 @@ func TestCacheField_InStepWithExpiry(t *testing.T) {
 	input := `
 id: build
 run: "npm run build"
-cached:
+cache:
   expireAfter: "30m"
 `
 	var s Step

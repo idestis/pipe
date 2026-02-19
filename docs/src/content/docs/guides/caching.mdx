@@ -1,0 +1,94 @@
+---
+title: Step Caching
+description: Cache step results to skip re-execution, with duration or wall-clock expiry.
+---
+
+## Enabling caching
+
+Add `cache: true` to skip re-running a step when a previous successful result exists:
+
+```yaml
+- id: sso-login
+  run: "aws sso login"
+  cache: true
+```
+
+Cache entries are stored in `~/.pipe/cache/` as JSON files, keyed by step ID. Entries are **shared across all pipelines** — a step with the same `id` in different pipelines shares the same cache.
+
+## Expiry
+
+### Cache forever
+
+```yaml
+cache: true
+```
+
+The entry never expires. Clear it manually with `pipe cache clear <step-id>`.
+
+### Duration-based expiry
+
+Use Go duration syntax:
+
+```yaml
+cache:
+  expireAfter: "1h"      # 1 hour
+```
+
+| Format | Examples |
+|--------|---------|
+| Seconds | `30s` |
+| Minutes | `10m` |
+| Hours | `1h`, `24h` |
+| Combined | `1h30m` |
+
+### Wall-clock expiry
+
+Re-run after a specific time of day:
+
+```yaml
+cache:
+  expireAfter: "18:10 UTC"    # re-run after 6:10 PM UTC
+```
+
+```yaml
+cache:
+  expireAfter: "15:00"        # re-run after 3:00 PM local time
+```
+
+## What gets cached
+
+| Field | Description |
+|-------|-------------|
+| `step_id` | Step identifier |
+| `cached_at` | When the entry was created |
+| `expires_at` | When the entry expires (null = forever) |
+| `exit_code` | Exit code of the command |
+| `output` | Captured stdout (omitted for sensitive steps) |
+| `run_type` | `single`, `strings`, or `subruns` |
+| `sub_outputs` | Per-sub-run output (for named sub-runs) |
+
+Only successful executions (exit code 0) are cached. Failures always re-execute.
+
+## Managing the cache
+
+List all cache entries:
+
+```bash
+pipe cache list
+```
+
+Clear all entries:
+
+```bash
+pipe cache clear
+```
+
+Clear a specific entry:
+
+```bash
+pipe cache clear sso-login
+```
+
+## Sensitive + cache
+
+When `sensitive: true` and `cache: true` are combined, the cache records the success but stores no output. On cache hit the step is skipped, but no `PIPE_*` environment variable is set. See [Sensitive Data](/guides/sensitive-data/) for details.

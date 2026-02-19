@@ -1,0 +1,110 @@
+---
+title: Writing Pipelines
+description: Step anatomy, run modes, and naming rules.
+---
+
+A pipeline is a YAML file with a `name`, an optional `description`, optional `vars`, and a list of `steps`.
+
+## Minimal example
+
+```yaml
+name: deploy
+description: "Build and deploy the app"
+steps:
+  - id: build
+    run: "go build -o app ."
+  - id: deploy
+    run: "scp app server:/opt/app"
+```
+
+## Step anatomy
+
+Every step requires two fields:
+
+| Field | Description |
+|-------|-------------|
+| `id`  | Unique identifier — used in logs, state files, env vars, and `depends_on` references |
+| `run` | Command(s) to execute (see run modes below) |
+
+Optional fields:
+
+| Field | Description |
+|-------|-------------|
+| `depends_on` | Step(s) that must complete before this one starts |
+| `retry` | Number of retries on failure (default `0`) |
+| `sensitive` | When `true`, output is excluded from the state file |
+| `cache` | Cache successful results to skip re-execution |
+
+See the [YAML Schema](/reference/yaml-schema/) for the complete field reference.
+
+## Three run modes
+
+### Single command
+
+A scalar string runs one command. Its stdout is captured and exposed as `PIPE_<STEP_ID>`.
+
+```yaml
+- id: get-version
+  run: "git describe --tags --always"
+```
+
+Downstream steps can use `$PIPE_GET_VERSION`.
+
+### Parallel strings
+
+A list of strings runs all commands concurrently. Output is **not** captured — these are fire-and-forget tasks like linting or health checks.
+
+```yaml
+- id: checks
+  run:
+    - "go vet ./..."
+    - "golangci-lint run"
+    - "go test -race ./..."
+```
+
+### Named sub-runs
+
+A list of mappings runs named commands concurrently, each with individual output capture. Each sub-run's output is available as `PIPE_<STEP_ID>_<SUBRUN_ID>`.
+
+```yaml
+- id: build
+  run:
+    - id: linux
+      run: "GOOS=linux go build -o dist/app-linux ."
+    - id: darwin
+      run: "GOOS=darwin go build -o dist/app-darwin ."
+```
+
+Sub-runs also support the `sensitive` flag individually.
+
+## Naming rules
+
+- Step and sub-run IDs must be unique within the pipeline.
+- IDs are used to build environment variable names: hyphens become underscores, everything is uppercased, and prefixed with `PIPE_`.
+- Pipeline names cannot conflict with reserved command words: `init`, `list`, `validate`, `cache`, `login`, `logout`, `pull`, `push`, `mv`, `alias`, `inspect`, `switch`.
+
+## Passing output between steps
+
+Each single-command step's stdout (trimmed) is injected into the environment for all subsequent steps:
+
+```yaml
+steps:
+  - id: get-version
+    run: "cat VERSION"
+  - id: build
+    run: "docker build -t app:$PIPE_GET_VERSION ."
+```
+
+For named sub-runs, each sub-run produces its own variable: `PIPE_<STEP>_<SUBRUN>`.
+
+```yaml
+steps:
+  - id: fetch
+    run:
+      - id: api-version
+        run: "curl -s https://api.example.com/version"
+      - id: db-version
+        run: "psql -t -c 'SELECT version()'"
+  - id: report
+    run: "echo api=$PIPE_FETCH_API_VERSION db=$PIPE_FETCH_DB_VERSION"
+```
