@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.0.0](https://github.com/idestis/pipe/compare/v1.1.0...v2.0.0) (2026-02-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* pipelines relying on YAML ordering for non-variable dependencies must add depends_on.
+
+### Features
+
+* add PipeHub integration with auth, hub store, and alias resolution ([f084b47](https://github.com/idestis/pipe/commit/f084b47236d82e817358de7c4644cc128a4ab40e))
+* add pipeline variables (vars) support with CLI overrides ([d2925a2](https://github.com/idestis/pipe/commit/d2925a2298ca834e7bb4be77a7f8d596883ca7b9))
+* add variable templating, log/state rotation, and mutable tag push ([c64b3b7](https://github.com/idestis/pipe/commit/c64b3b7f5a5da275277fe06214af068e6cd1cdc0))
+* **hub:** add verbose logging, bug fixes, and rebrand to Pipe Hub ([74813da](https://github.com/idestis/pipe/commit/74813dad3279ce9143b36290d504cf3c40251fe1))
+* parallel step execution with depends_on dependency graph ([8a33d2f](https://github.com/idestis/pipe/commit/8a33d2f13dfee878c962519cb41232c0750eda09))
+* **ui:** add compact status display for pipeline runs ([6d0a40e](https://github.com/idestis/pipe/commit/6d0a40e299fd282d3d4dce5eb8650b9ca5f88870))
+
+
+### Bug Fixes
+
+* **cli:** replace cobra arg validators with human-readable usage messages ([29356b3](https://github.com/idestis/pipe/commit/29356b3e83f0bf46ec1ac9154cd55aeec10044d2))
+* **cli:** store alias by bare name and create log subdirectories for hub pipes ([a7e79fb](https://github.com/idestis/pipe/commit/a7e79fb2a53002a8c5065919ca6c672fc4c0ce9f))
+* **hub:** extract bare SHA256 from digest field when not set directly ([987a245](https://github.com/idestis/pipe/commit/987a245f853a158169297c947433b3d15f1a1a80))
+* resolve golangci-lint errors across multiple packages ([2c09027](https://github.com/idestis/pipe/commit/2c090276f0710cfcdfdd784542b5392d60133a62))
+
 ## [1.1.0](https://github.com/idestis/pipe/compare/v1.0.3...v1.1.0) (2026-02-16)
 
 
