@@ -25,6 +25,9 @@ var mvCmd = &cobra.Command{
 		if dstOwner == "" {
 			return fmt.Errorf("destination must include owner — use \"pipe mv %s <owner>/%s\"", srcName, srcName)
 		}
+		if !validOwner(dstOwner) {
+			return fmt.Errorf("invalid owner name %q — must be 4-30 characters, using only lowercase letters, digits, hyphens, and dots", dstOwner)
+		}
 
 		// Verify source exists
 		srcPath := filepath.Join(config.FilesDir, srcName+".yaml")

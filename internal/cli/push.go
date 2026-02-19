@@ -32,6 +32,9 @@ var pushCmd = &cobra.Command{
 		if owner == "" {
 			return fmt.Errorf("owner required — use \"pipe push <owner>/<name>[:<tag>]\"")
 		}
+		if !validOwner(owner) {
+			return fmt.Errorf("invalid owner name %q — must be 4-30 characters, using only lowercase letters, digits, hyphens, and dots", owner)
+		}
 
 		// Build tag list: -t flags take precedence, then inline :tag, then default "latest"
 		tags := pushTags

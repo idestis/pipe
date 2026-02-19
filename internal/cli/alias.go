@@ -39,8 +39,8 @@ var aliasAddCmd = &cobra.Command{
 		if !validName(aName) {
 			return fmt.Errorf("invalid alias name %q — use only letters, digits, hyphens, and underscores", aName)
 		}
-		if owner != "" && !validName(owner) {
-			return fmt.Errorf("invalid owner name %q — use only letters, digits, hyphens, and underscores", owner)
+		if owner != "" && !validOwner(owner) {
+			return fmt.Errorf("invalid owner name %q — must be 4-30 characters, using only lowercase letters, digits, hyphens, and dots", owner)
 		}
 		if reservedNames[aName] {
 			return fmt.Errorf("%q is a reserved command name", aName)

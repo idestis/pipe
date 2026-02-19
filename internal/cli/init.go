@@ -26,8 +26,8 @@ var initCmd = &cobra.Command{
 		if !validName(name) {
 			return fmt.Errorf("invalid pipeline name %q — use only letters, digits, hyphens, and underscores", name)
 		}
-		if owner != "" && !validName(owner) {
-			return fmt.Errorf("invalid owner name %q — use only letters, digits, hyphens, and underscores", owner)
+		if owner != "" && !validOwner(owner) {
+			return fmt.Errorf("invalid owner name %q — must be 4-30 characters, using only lowercase letters, digits, hyphens, and dots", owner)
 		}
 
 		if reservedNames[name] {

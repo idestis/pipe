@@ -40,6 +40,9 @@ var pullCmd = &cobra.Command{
 		if owner == "" {
 			return fmt.Errorf("owner required — use \"pipe pull <owner>/<name>[:<tag>]\"")
 		}
+		if !validOwner(owner) {
+			return fmt.Errorf("invalid owner name %q — must be 4-30 characters, using only lowercase letters, digits, hyphens, and dots", owner)
+		}
 		if tag == "" {
 			tag = "latest"
 		}

@@ -84,3 +84,41 @@ func TestParseVarOverrides_InvalidKeyChars(t *testing.T) {
 		t.Fatalf("expected error containing %q, got %q", "invalid variable key", err.Error())
 	}
 }
+
+func TestValidOwner(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{"lowercase letters", "alice", true},
+		{"digits", "user123", true},
+		{"hyphens", "my-user", true},
+		{"dots", "my.user", true},
+		{"mixed valid", "alice.bob-99", true},
+		{"exactly 4 chars", "abcd", true},
+		{"exactly 30 chars", "abcdefghijklmnopqrstuvwxyz1234", true},
+		{"too short 1 char", "a", false},
+		{"too short 3 chars", "abc", false},
+		{"too long 31 chars", "abcdefghijklmnopqrstuvwxyz12345", false},
+		{"uppercase rejected", "Alice", false},
+		{"all uppercase rejected", "ALICE", false},
+		{"underscore rejected", "my_user", false},
+		{"dot allowed mid-string", "a.b.c", true},
+		{"starts with hyphen", "-user", false},
+		{"starts with dot", ".user", false},
+		{"empty string", "", false},
+		{"space rejected", "my user", false},
+		{"slash rejected", "my/user", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := validOwner(tt.input)
+			if got != tt.want {
+				t.Errorf("validOwner(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
+	}
+}

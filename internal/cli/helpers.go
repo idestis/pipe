@@ -50,6 +50,28 @@ func validName(name string) bool {
 	return true
 }
 
+// validOwner checks that an owner/username contains only lowercase letters,
+// digits, hyphens, and dots, cannot start with a hyphen or dot, and must be
+// between 4 and 30 characters long. This matches the hub's username rules.
+func validOwner(name string) bool {
+	if len(name) < 4 || len(name) > 30 {
+		return false
+	}
+	for i, c := range name {
+		switch {
+		case c >= 'a' && c <= 'z', c >= '0' && c <= '9':
+			// always allowed
+		case c == '-' || c == '.':
+			if i == 0 {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 // validVarKey checks that a variable key contains only letters, digits, hyphens,
 // and underscores, and is non-empty.
 func validVarKey(key string) bool {
