@@ -1,0 +1,50 @@
+---
+title: pipe inspect
+description: Show detailed pipeline metadata.
+---
+
+## Synopsis
+
+```
+pipe inspect <name>
+```
+
+## Description
+
+Displays detailed information about a pipeline including its source, path, description, steps with dependency relationships, variable count, and (for Hub pipelines) HEAD reference, active tag, and pulled tags with metadata.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<name>` | Pipeline name, alias, or `owner/name` path |
+
+## Flags
+
+None.
+
+## Output fields
+
+| Field | Description |
+|-------|-------------|
+| Name | Pipeline name |
+| Alias | Alias pointing to this pipeline (if any) |
+| Source | `local` or `hub` |
+| Path | File system path to the pipeline |
+| Description | Pipeline description |
+| Steps | Step list with dependency info |
+| Vars | Number of declared variables |
+| HEAD | Current HEAD reference (Hub only) |
+| Active Tag | Currently active tag (Hub only) |
+| Tags | Pulled tags with type, SHA, dirty status, and timestamps (Hub only) |
+
+## Examples
+
+```bash
+pipe inspect deploy
+```
+
+## See also
+
+- [Writing Pipelines](/guides/writing-pipelines/)
+- [Step Dependencies](/guides/dependencies/)

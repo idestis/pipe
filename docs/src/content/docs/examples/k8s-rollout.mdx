@@ -1,0 +1,45 @@
+---
+title: K8s Rollout
+description: Build an image and roll it out to a Kubernetes cluster.
+---
+
+## Pipeline
+
+```yaml
+name: k8s-rollout
+description: "Build an image and roll it out to a Kubernetes cluster"
+steps:
+  - id: get-sha
+    run: "git rev-parse --short HEAD"
+
+  - id: build-and-push
+    run: |
+      docker build -t myapp:$PIPE_GET_SHA .
+      docker tag myapp:$PIPE_GET_SHA gcr.io/my-project/myapp:$PIPE_GET_SHA
+      docker push gcr.io/my-project/myapp:$PIPE_GET_SHA
+
+  - id: deploy
+    run: "kubectl set image deployment/myapp myapp=gcr.io/my-project/myapp:$PIPE_GET_SHA -n production"
+    depends_on: "build-and-push"
+
+  - id: wait
+    run: "kubectl rollout status deployment/myapp -n production --timeout=120s"
+    depends_on: "deploy"
+    retry: 1
+
+  - id: verify
+    run:
+      - id: pods
+        run: "kubectl get pods -n production -l app=myapp -o wide"
+      - id: health
+        run: "curl -sf https://myapp.example.com/health"
+    depends_on: "wait"
+```
+
+## Concepts demonstrated
+
+- **[Output passing](/guides/writing-pipelines/#passing-output-between-steps)** — Git SHA flows through the entire pipeline via `$PIPE_GET_SHA`
+- **[Implicit edges](/guides/dependencies/#implicit-variable-edges)** — `build-and-push` depends on `get-sha` through variable reference
+- **[Dependencies](/guides/dependencies/)** — `deploy` → `wait` → `verify` chain
+- **[Retry](/reference/yaml-schema/#step-fields)** — rollout status check retries once
+- **[Named sub-runs](/guides/parallel-execution/#named-sub-runs)** — `verify` checks pods and health endpoint in parallel with individual output

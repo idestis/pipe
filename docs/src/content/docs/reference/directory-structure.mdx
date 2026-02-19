@@ -1,0 +1,68 @@
+---
+title: Directory Structure
+description: Layout of the ~/.pipe/ directory.
+---
+
+Pipe stores all data under `~/.pipe/`. Here is the full directory tree:
+
+```
+~/.pipe/
+├── files/                    # Local pipeline YAML files
+│   ├── deploy.yaml
+│   └── backup.yaml
+├── hub/                      # Hub pipeline storage
+│   └── <owner>/
+│       └── <name>/
+│           ├── index.json    # Schema-versioned metadata, tags, active tag
+│           ├── HEAD          # Symlink to active tag or blob
+│           ├── blobs/
+│           │   └── sha256/
+│           │       └── <hex> # Content-addressable blob files
+│           └── tags/
+│               ├── latest    # Symlink → ../blobs/sha256/<hex>
+│               └── v1.0.0    # Regular file = editable tag
+├── state/                    # Run state files (per pipeline)
+│   └── <pipeline>/
+│       └── <run-id>.json
+├── logs/                     # Run log files
+│   └── <pipeline>/
+│       └── <run-id>.log
+├── cache/                    # Step cache entries
+│   └── <step-id>.json
+├── credentials.json          # Hub authentication credentials
+└── aliases.json              # Pipeline alias definitions
+```
+
+## files/
+
+Local pipeline YAML files. Created by `pipe init <name>` and used when no alias or Hub pipeline matches.
+
+## hub/
+
+Hub pipeline storage using a git-like content-addressable layout. Each pipeline has an `index.json` with metadata, a `HEAD` symlink pointing to the active tag, blob files keyed by SHA-256, and tag files that are either symlinks (immutable) or regular files (editable).
+
+See [Hub Overview](/hub/overview/) for details.
+
+## state/
+
+Run state files that record which steps completed, their exit codes, and outputs. Used by `--resume` to pick up failed runs. Sensitive step outputs are excluded.
+
+Controlled by `PIPE_STATE_ROTATE`.
+
+## logs/
+
+Run log files. Each run produces a log file identified by the run ID.
+
+Controlled by `PIPE_LOG_ROTATE`.
+
+## cache/
+
+Step cache entries stored as JSON. Shared across all pipelines by step ID. Managed with `pipe cache list` and `pipe cache clear`.
+
+## credentials.json
+
+Hub authentication credentials stored after `pipe login`.
+
+## aliases.json
+
+Pipeline alias definitions mapping short names to `owner/name` Hub targets. Managed with `pipe alias`.

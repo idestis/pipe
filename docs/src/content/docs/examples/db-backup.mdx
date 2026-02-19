@@ -1,0 +1,43 @@
+---
+title: DB Backup
+description: Dump a PostgreSQL database, compress it, and upload to S3.
+---
+
+## Pipeline
+
+```yaml
+name: db-backup
+description: "Dump a PostgreSQL database, compress it, and upload to S3"
+steps:
+  - id: timestamp
+    run: "date +%Y%m%d-%H%M%S"
+
+  - id: credentials
+    run: "aws secretsmanager get-secret-value --secret-id prod/db --query SecretString --output text"
+    sensitive: true
+
+  - id: dump
+    run: "PGPASSWORD=$PIPE_CREDENTIALS pg_dump -h db.internal -U app -d myapp -Fc -f /tmp/backup-$PIPE_TIMESTAMP.dump"
+    depends_on: "credentials"
+
+  - id: compress
+    run: "gzip /tmp/backup-$PIPE_TIMESTAMP.dump"
+    depends_on: "dump"
+
+  - id: upload
+    run: "aws s3 cp /tmp/backup-$PIPE_TIMESTAMP.dump.gz s3://my-backups/postgres/$PIPE_TIMESTAMP.dump.gz"
+    depends_on: "compress"
+    retry: 3
+
+  - id: cleanup
+    run: "rm -f /tmp/backup-$PIPE_TIMESTAMP.dump.gz"
+    depends_on: "upload"
+```
+
+## Concepts demonstrated
+
+- **[Sensitive data](/guides/sensitive-data/)** — `credentials` is marked `sensitive: true` so the database password is never written to the state file
+- **[Output passing](/guides/writing-pipelines/#passing-output-between-steps)** — `$PIPE_TIMESTAMP` and `$PIPE_CREDENTIALS` flow to downstream steps
+- **[Dependencies](/guides/dependencies/)** — strict linear chain ensures steps run in order
+- **[Retry](/reference/yaml-schema/#step-fields)** — S3 upload retries 3 times on failure
+- **[Resuming](/guides/resuming-runs/)** — if upload fails, `--resume` re-fetches credentials (sensitive) and retries from the failed step

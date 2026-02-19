@@ -1,0 +1,73 @@
+---
+title: Hub Overview
+description: What Pipe Hub is, how local storage works, and mutable vs immutable pipelines.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Closed Beta">
+  Pipe Hub is in closed beta. Features and APIs may change. Request access at [hub.getpipe.dev](https://hub.getpipe.dev).
+</Aside>
+
+## What is Pipe Hub?
+
+Pipe Hub is a central registry for sharing and versioning pipelines. Instead of copying YAML files between machines, you can push a pipeline to Hub and pull it anywhere:
+
+```bash
+pipe push myorg/deploy
+pipe pull myorg/deploy
+```
+
+## Local store layout
+
+Hub pipelines are stored under `~/.pipe/hub/` using a git-like content-addressable layout:
+
+```
+~/.pipe/hub/<owner>/<name>/
+├── index.json              # Metadata, tags, active tag
+├── HEAD                    # Symlink → tags/<tag> or blobs/sha256/<hex>
+├── blobs/
+│   └── sha256/
+│       └── <hex>           # Content-addressable YAML blob
+└── tags/
+    ├── latest              # Symlink → ../blobs/sha256/<hex>
+    └── dev                 # Regular file (editable tag)
+```
+
+### index.json
+
+Schema-versioned metadata including the pipeline owner, name, all pulled tags with their SHA-256 checksums, sizes, and timestamps.
+
+### HEAD
+
+A symlink pointing to the currently active tag (or directly to a blob in detached HEAD state). Pipe reads HEAD to determine which content to run.
+
+### Blobs
+
+Content-addressable storage keyed by SHA-256 hash. When you push or pull, Pipe deduplicates content — identical YAML produces the same blob.
+
+### Tags
+
+Tags point to blobs. A **symlink** tag is immutable (the content at that tag is frozen). A **regular file** tag (editable) is an independent copy that can be modified locally.
+
+## Mutable vs immutable pipelines
+
+| Type | Behavior |
+|------|----------|
+| **Immutable** | Tags cannot be overwritten once pushed (except `latest`). Guarantees reproducibility. |
+| **Mutable** | Tags can be reassigned to new content. Useful for living pipelines that evolve. |
+
+The mutability is set when the pipeline is created on Hub.
+
+## Resolution
+
+When you run `pipe myorg/deploy`, Pipe:
+
+1. Loads `index.json` from `~/.pipe/hub/myorg/deploy/`
+2. Reads `HEAD` to find the active tag (or blob)
+3. Reads the YAML content from the tag/blob path
+4. Parses and executes the pipeline

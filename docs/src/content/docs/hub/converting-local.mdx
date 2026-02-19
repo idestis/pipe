@@ -1,0 +1,45 @@
+---
+title: Converting Local to Hub
+description: Migrate a local pipeline to Hub with pipe mv.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Closed Beta">
+  Pipe Hub is in closed beta. Features and APIs may change.
+</Aside>
+
+## Moving a local pipeline to Hub
+
+Convert a local pipeline file to a Hub pipeline:
+
+```bash
+pipe mv deploy myorg/deploy
+```
+
+### What happens
+
+1. Reads the content from `~/.pipe/files/deploy.yaml`.
+2. If `myorg/deploy` doesn't exist locally, creates the Hub directory structure with a `latest` tag.
+3. If `myorg/deploy` already exists, imports the content as an untagged blob (detached HEAD state).
+4. Deletes the original local file (`~/.pipe/files/deploy.yaml`).
+5. Creates an alias `deploy` → `myorg/deploy` so existing scripts keep working.
+
+## After moving
+
+Your pipeline now lives in `~/.pipe/hub/myorg/deploy/`. You can:
+
+- Run it the same way: `pipe deploy` (alias resolves it)
+- Push it to Hub: `pipe push myorg/deploy`
+- Create tags: `pipe tag myorg/deploy v1.0.0`
+- Inspect it: `pipe inspect deploy`
+
+## Alias auto-creation
+
+The `mv` command automatically creates an alias from the old name to the new Hub path. This means any scripts or muscle memory using `pipe deploy` continues to work seamlessly.
+
+If an alias with that name already exists, the move still succeeds but the alias is not overwritten — you'll need to update it manually with `pipe alias mv`.

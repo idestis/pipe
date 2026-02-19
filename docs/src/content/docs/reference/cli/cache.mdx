@@ -1,0 +1,49 @@
+---
+title: pipe cache
+description: Manage step cache entries.
+---
+
+## Synopsis
+
+```
+pipe cache list
+pipe cache clear [step-id]
+```
+
+## Description
+
+Manage cached step results stored in `~/.pipe/cache/`.
+
+## Subcommands
+
+### `pipe cache list`
+
+Shows all cache entries in a table:
+
+| Column | Description |
+|--------|-------------|
+| STEP | Step ID |
+| CACHED AT | When the entry was cached |
+| EXPIRES AT | When the entry expires (or "never") |
+| TYPE | Run type: `single`, `strings`, or `subruns` |
+
+### `pipe cache clear [step-id]`
+
+Without arguments, clears all cache entries. With a step ID, clears only that entry.
+
+## Examples
+
+```bash
+# List all cached entries
+pipe cache list
+
+# Clear all entries
+pipe cache clear
+
+# Clear a specific step's cache
+pipe cache clear sso-login
+```
+
+## See also
+
+- [Step Caching](/guides/caching/)

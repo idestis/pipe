@@ -1,0 +1,47 @@
+---
+title: Resuming Failed Runs
+description: Pick up where you left off with --resume.
+---
+
+## How resume works
+
+When a pipeline fails, Pipe saves the run state to `~/.pipe/state/<pipeline>/<run-id>.json`. You can resume from the last failure:
+
+```bash
+pipe deploy --resume <run-id>
+```
+
+Pipe reads the state file, skips all steps that completed successfully, and re-executes from the first failed step onward.
+
+## Finding the run ID
+
+When a run fails, Pipe prints the run ID in the error output. You can also list state files:
+
+```bash
+ls ~/.pipe/state/<pipeline>/
+```
+
+## What gets skipped
+
+- Steps that completed successfully in the original run are skipped.
+- Their outputs are restored from the state file and re-injected into the environment so downstream steps have the values they need.
+
+## Sensitive steps
+
+Steps marked `sensitive: true` are **always re-executed** on resume, even if they succeeded in the original run. This is because their output was not saved to the state file. The step runs again so that downstream steps receive the value via `PIPE_*` environment variables.
+
+```yaml
+- id: get-token
+  run: "vault read -field=token secret/deploy"
+  sensitive: true
+```
+
+## State rotation
+
+Control how many state files to keep with `PIPE_STATE_ROTATE`:
+
+```bash
+export PIPE_STATE_ROTATE=5   # keep last 5 state files per pipeline
+```
+
+Set to `0` to disable rotation (keep all state files). See [Environment Variables](/reference/environment-variables/).

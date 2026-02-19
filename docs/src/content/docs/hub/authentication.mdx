@@ -1,0 +1,58 @@
+---
+title: Authentication
+description: Device auth flow, credentials storage, and PIPEHUB_URL.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Closed Beta">
+  Pipe Hub is in closed beta. Features and APIs may change.
+</Aside>
+
+## Logging in
+
+Pipe uses a device authorization flow:
+
+```bash
+pipe login
+```
+
+This will:
+
+1. Generate a device code and display a verification URL
+2. Open your browser to the verification page
+3. Poll for authorization until you approve the device
+4. Save credentials to `~/.pipe/credentials.json`
+
+If you're already logged in, Pipe prompts for confirmation before re-authenticating.
+
+## Logging out
+
+```bash
+pipe logout
+```
+
+Removes stored credentials from `~/.pipe/credentials.json`.
+
+## Unauthenticated access
+
+Some Hub operations work without authentication (e.g., pulling public pipelines), but with lower API rate limits. Pushing always requires authentication.
+
+## Custom Hub URL
+
+Override the Hub API endpoint with the `PIPEHUB_URL` environment variable:
+
+```bash
+export PIPEHUB_URL=https://hub.internal.example.com
+pipe login
+```
+
+Default: `https://hub.getpipe.dev`
+
+## Credentials storage
+
+Credentials are stored in plain JSON at `~/.pipe/credentials.json`. The file contains an API key used for `Authorization: Bearer` headers on all authenticated requests.

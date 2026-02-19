@@ -1,0 +1,33 @@
+---
+title: pipe
+description: A minimal, dependency-free pipeline runner for the command line.
+template: splash
+hero:
+  tagline: Replace fragile shell aliases with clear, structured YAML workflows.
+  actions:
+    - text: Get Started
+      link: /getting-started/introduction/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/idestis/pipe
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid>
+  <Card title="Sequential & parallel" icon="rocket">
+    Steps run in order by default, or concurrently when you use a list of commands or named sub-runs.
+  </Card>
+  <Card title="Dependency graph" icon="random">
+    Declare `depends_on` or let Pipe detect `$PIPE_*` variable edges automatically. Cycles are caught at parse time.
+  </Card>
+  <Card title="Variables & templating" icon="setting">
+    Go template syntax with three-layer precedence — YAML defaults, environment overrides, CLI arguments.
+  </Card>
+  <Card title="Hub (Beta)" icon="cloud">
+    Push, pull, tag, and version pipelines with a central registry.
+  </Card>
+</CardGrid>

@@ -1,0 +1,60 @@
+---
+title: Quickstart
+description: Create and run your first pipeline in under a minute.
+---
+
+## Create a pipeline
+
+```bash
+pipe init hello
+```
+
+This creates `~/.pipe/files/hello.yaml` with a starter template.
+
+## Edit the pipeline
+
+Open the file and replace the contents:
+
+```yaml
+name: hello
+description: "My first pipeline"
+steps:
+  - id: greet
+    run: "echo Hello from Pipe!"
+  - id: date
+    run: "date"
+```
+
+## Run it
+
+```bash
+pipe hello
+```
+
+Pipe runs each step in order, streaming output to your terminal.
+
+## Pass variables from the CLI
+
+Add a `vars` section:
+
+```yaml
+name: hello
+description: "My first pipeline"
+vars:
+  name: "world"
+steps:
+  - id: greet
+    run: "echo Hello, $PIPE_VAR_NAME!"
+```
+
+Override at runtime:
+
+```bash
+pipe hello name=Pipe
+```
+
+## What's next
+
+- [Writing Pipelines](/guides/writing-pipelines/) — learn about step anatomy, run modes, and naming rules
+- [Running Pipelines](/guides/running-pipelines/) — verbosity levels, compact UI, and logs
+- [Pipeline YAML Schema](/reference/yaml-schema/) — full field reference

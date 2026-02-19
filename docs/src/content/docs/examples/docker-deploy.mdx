@@ -1,0 +1,42 @@
+---
+title: Docker Deploy
+description: Build, tag, and push a Docker image then deploy to a remote server.
+---
+
+## Pipeline
+
+```yaml
+name: docker-deploy
+description: "Build, tag, and push a Docker image then deploy to remote server"
+steps:
+  - id: get-version
+    run: "git describe --tags --always"
+
+  - id: lint
+    run:
+      - "hadolint Dockerfile"
+      - "docker compose config --quiet"
+
+  - id: build
+    run: "docker build -t myapp:$PIPE_GET_VERSION ."
+    depends_on: "lint"
+
+  - id: push
+    run: |
+      docker tag myapp:$PIPE_GET_VERSION registry.example.com/myapp:$PIPE_GET_VERSION
+      docker push registry.example.com/myapp:$PIPE_GET_VERSION
+    depends_on: "build"
+
+  - id: deploy
+    run: "ssh deploy@prod 'docker pull registry.example.com/myapp:$PIPE_GET_VERSION && docker service update --image registry.example.com/myapp:$PIPE_GET_VERSION myapp'"
+    depends_on: "push"
+    retry: 2
+```
+
+## Concepts demonstrated
+
+- **[Output passing](/guides/writing-pipelines/#passing-output-between-steps)** — `get-version` output feeds into `build`, `push`, and `deploy` via `$PIPE_GET_VERSION`
+- **[Parallel commands](/guides/parallel-execution/)** — `lint` runs hadolint and docker compose config concurrently
+- **[Dependencies](/guides/dependencies/)** — `build` → `push` → `deploy` chain via `depends_on`
+- **[Implicit edges](/guides/dependencies/#implicit-variable-edges)** — `build` depends on `get-version` through `$PIPE_GET_VERSION` reference
+- **[Retry](/reference/yaml-schema/#step-fields)** — `deploy` retries up to 2 times on failure

@@ -1,0 +1,20 @@
+/* Pipe docs — brand colors from pipehub web app
+   ────────────────────────────────────────────────
+   Accent: teal #2dd4bf / #5eead4
+   Surfaces: #0d1117 → #161b22 → #21262d
+   Text: #e6edf3 (primary), #8b949e (secondary)
+   Font: Inter / Fira Code */
+
+:root {
+  --sl-color-accent-low: #0d3d38;
+  --sl-color-accent: #2dd4bf;
+  --sl-color-accent-high: #ccfbf1;
+  --sl-font-system: "Inter", system-ui, sans-serif;
+  --sl-font-system-mono: "Fira Code", ui-monospace, monospace;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #ccfbf1;
+  --sl-color-accent: #0d9488;
+  --sl-color-accent-high: #0d3d38;
+}

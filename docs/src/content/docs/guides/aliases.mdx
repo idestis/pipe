@@ -1,0 +1,75 @@
+---
+title: Aliases
+description: Create short names for Hub pipelines.
+---
+
+## What are aliases?
+
+Aliases let you run Hub pipelines with a short name instead of the full `owner/name` path:
+
+```bash
+# Without alias
+pipe myorg/deploy
+
+# With alias
+pipe deploy
+```
+
+Aliases are stored in `~/.pipe/aliases.json`.
+
+## Creating an alias
+
+```bash
+pipe alias add deploy myorg/deploy
+```
+
+This maps `deploy` to `myorg/deploy`. When you run `pipe deploy`, Pipe resolves it through the alias.
+
+### Restrictions
+
+- Alias names cannot conflict with reserved command words (`init`, `list`, `validate`, etc.).
+- Alias names cannot shadow existing local pipeline files in `~/.pipe/files/`.
+
+## Removing an alias
+
+```bash
+pipe alias rm deploy
+```
+
+## Reassigning an alias
+
+Point an existing alias to a different target:
+
+```bash
+pipe alias mv deploy otherorg/deploy-v2
+```
+
+## Listing aliases
+
+```bash
+pipe alias list
+```
+
+Or simply:
+
+```bash
+pipe alias
+```
+
+Both show a table of all aliases and their targets.
+
+## Resolution order
+
+When you run `pipe <name>`:
+
+1. **Alias** — checks `~/.pipe/aliases.json` for a matching alias
+2. **Hub** — if the resolved name contains `/`, looks up the Hub pipeline
+3. **Local** — checks `~/.pipe/files/<name>.yaml`
+
+## Auto-created aliases
+
+Some commands create aliases automatically:
+
+- `pipe init owner/name` — creates an alias from `name` to `owner/name` (if no conflict)
+- `pipe mv local-name owner/name` — creates an alias from `local-name` to `owner/name`
+- `pipe rm` — cleans up aliases pointing to the removed pipeline

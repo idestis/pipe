@@ -1,0 +1,47 @@
+---
+title: pipe mv
+description: Convert a local pipeline to Hub.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe mv <name> <owner>/<name>
+```
+
+## Description
+
+Converts a local pipeline file to a Hub pipeline. Reads from `~/.pipe/files/<name>.yaml`, creates the Hub directory structure, deletes the original file, and creates an alias so the old name keeps working.
+
+If the Hub pipeline already exists locally, the content is imported as an untagged blob (detached HEAD state) rather than creating a `latest` tag.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<name>` | Local pipeline name |
+| `<owner>/<name>` | Target Hub path |
+
+## Flags
+
+None.
+
+## Examples
+
+```bash
+pipe mv deploy myorg/deploy
+```
+
+After this:
+- `pipe deploy` still works (via alias)
+- `pipe push myorg/deploy` uploads to Hub
+- `~/.pipe/files/deploy.yaml` is deleted
+
+## See also
+
+- [Converting Local to Hub](/hub/converting-local/)
+- [`pipe alias`](/reference/cli/alias/)

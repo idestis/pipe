@@ -1,0 +1,58 @@
+---
+title: pipe <pipeline>
+description: Run a pipeline.
+---
+
+## Synopsis
+
+```
+pipe <pipeline> [KEY=value ...] [flags]
+```
+
+## Description
+
+Runs the named pipeline. Pipe resolves the name through aliases, Hub, then local files. Variable overrides are passed as positional arguments in `KEY=value` format.
+
+When run without arguments, Pipe prints help. When run with `<pipeline> help`, it shows pipeline-specific usage including variables and steps.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<pipeline>` | Pipeline name, alias, or `owner/name` path |
+| `KEY=value` | Variable overrides (repeatable) |
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--resume <run-id>` | Resume a previous run by ID |
+| `-v`, `--verbose` | Increase verbosity (`-v` verbose, `-vv` debug) |
+
+## Examples
+
+```bash
+# Run a local pipeline
+pipe deploy
+
+# Run with variable overrides
+pipe deploy env=production tag=v1.2.0
+
+# Run a Hub pipeline
+pipe myorg/deploy
+
+# Run a specific Hub tag
+pipe myorg/deploy:v1.0.0
+
+# Resume a failed run
+pipe deploy --resume abc123
+
+# Verbose output
+pipe deploy -v
+```
+
+## See also
+
+- [Running Pipelines](/guides/running-pipelines/)
+- [Variables & Templating](/guides/variables/)
+- [Resuming Failed Runs](/guides/resuming-runs/)

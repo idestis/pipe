@@ -1,0 +1,42 @@
+---
+title: Go Release
+description: Lint, test, and cross-compile a Go project for release.
+---
+
+## Pipeline
+
+```yaml
+name: go-release
+description: "Lint, test, and cross-compile a Go project for release"
+steps:
+  - id: checks
+    run:
+      - "go vet ./..."
+      - "golangci-lint run"
+      - "go test -race ./..."
+
+  - id: get-version
+    run: "git describe --tags --abbrev=0"
+
+  - id: build
+    run:
+      - id: linux
+        run: "GOOS=linux GOARCH=amd64 go build -ldflags '-s -w -X main.version=$PIPE_GET_VERSION' -o dist/app-linux-amd64"
+      - id: darwin
+        run: "GOOS=darwin GOARCH=arm64 go build -ldflags '-s -w -X main.version=$PIPE_GET_VERSION' -o dist/app-darwin-arm64"
+      - id: windows
+        run: "GOOS=windows GOARCH=amd64 go build -ldflags '-s -w -X main.version=$PIPE_GET_VERSION' -o dist/app-windows-amd64.exe"
+    depends_on: "checks"
+
+  - id: checksums
+    run: "cd dist && shasum -a 256 * > checksums.txt && cat checksums.txt"
+    depends_on: "build"
+```
+
+## Concepts demonstrated
+
+- **[Parallel commands](/guides/parallel-execution/)** — `checks` runs vet, lint, and test concurrently
+- **[Named sub-runs](/guides/parallel-execution/#named-sub-runs)** — `build` compiles three platforms in parallel with individual output capture
+- **[Dependencies](/guides/dependencies/)** — `build` waits for `checks`; `checksums` waits for `build`
+- **[Implicit edges](/guides/dependencies/#implicit-variable-edges)** — `build` sub-runs reference `$PIPE_GET_VERSION`
+- **[Output passing](/guides/writing-pipelines/#passing-output-between-steps)** — version tag flows from `get-version` into build flags

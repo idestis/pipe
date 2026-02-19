@@ -1,0 +1,76 @@
+---
+title: Variables & Templating
+description: Declare variables, use Go templates, and understand precedence.
+---
+
+## Declaring variables
+
+Add a `vars` section to your pipeline:
+
+```yaml
+name: deploy
+vars:
+  registry: "ghcr.io/myorg"
+  env: "staging"
+steps:
+  - id: push
+    run: "docker push $PIPE_VAR_REGISTRY/app:latest"
+  - id: deploy
+    run: "kubectl apply -n $PIPE_VAR_ENV -f deploy.yaml"
+```
+
+Each variable is exposed as `PIPE_VAR_<KEY>` with hyphens converted to underscores and the name uppercased.
+
+## Precedence
+
+Variables resolve from three sources with increasing priority:
+
+| Priority | Source | Description |
+|----------|--------|-------------|
+| 1 (lowest) | YAML `vars` | Default values in the pipeline file |
+| 2 | System environment | `PIPE_VAR_*` env vars set before running |
+| 3 (highest) | CLI overrides | `KEY=value` arguments after the pipeline name |
+
+```bash
+# Uses YAML default for "registry", overrides "env"
+pipe deploy env=production
+
+# System env override
+export PIPE_VAR_REGISTRY=docker.io/myorg
+pipe deploy
+```
+
+## Go template syntax
+
+Variable values support Go `text/template` syntax, executed against the system environment:
+
+```yaml
+vars:
+  user: "{{ .USER }}"
+  branch: "{{ .GITHUB_REF_NAME | default \"main\" }}"
+  home: "{{ .HOME }}/projects"
+```
+
+The `default` function provides a fallback when the environment variable is unset or empty:
+
+```yaml
+vars:
+  region: "{{ .AWS_REGION | default \"us-east-1\" }}"
+```
+
+### How it works
+
+1. Pipe reads each var value from the YAML.
+2. If the value contains `{{`, it is parsed as a Go template.
+3. The template is executed with the system environment as a flat map (e.g., `.HOME`, `.USER`, `.PATH`).
+4. If parsing or execution fails, the original string is used as-is (graceful degradation).
+
+## Introducing new variables from the CLI
+
+CLI overrides can introduce variables not declared in `vars`:
+
+```bash
+pipe deploy custom_flag=true
+```
+
+This creates `PIPE_VAR_CUSTOM_FLAG=true` in the environment even though `custom_flag` is not in the YAML.

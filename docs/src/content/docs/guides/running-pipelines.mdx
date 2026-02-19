@@ -1,0 +1,67 @@
+---
+title: Running Pipelines
+description: Verbosity levels, compact UI, logs, and state.
+---
+
+## Basic usage
+
+Run a pipeline by name:
+
+```bash
+pipe deploy
+```
+
+Pipe resolves the name through the [alias chain](/guides/aliases/), then Hub, then local files at `~/.pipe/files/`.
+
+## Variable overrides
+
+Pass variables as positional arguments after the pipeline name:
+
+```bash
+pipe deploy env=production tag=v1.2.0
+```
+
+These override any values in the pipeline's `vars` section. See [Variables & Templating](/guides/variables/) for the full precedence chain.
+
+## Verbosity levels
+
+| Flag | Level | Behavior |
+|------|-------|----------|
+| *(none)* | Warn | Compact mode — minimal output, suppresses info noise |
+| `-v` | Info | Verbose — shows step start/finish, variable resolution |
+| `-vv` | Debug | Debug — includes internal details, env construction |
+
+```bash
+pipe deploy -v       # verbose
+pipe deploy -vv      # debug
+```
+
+## Compact UI
+
+At the default verbosity (no `-v` flag), Pipe shows a compact status display: a spinner with the current step name, replaced by a success or failure indicator when the step completes. This keeps the terminal clean for pipelines with many steps.
+
+## Logs
+
+Run logs are written to `~/.pipe/logs/`. Each run produces a log file identified by the run ID.
+
+### Log rotation
+
+Control how many log files to keep with the `PIPE_LOG_ROTATE` environment variable:
+
+```bash
+export PIPE_LOG_ROTATE=10   # keep last 10 log files
+```
+
+Set to `0` to disable rotation (keep all logs). Unset or invalid values use the default.
+
+## State files
+
+Each run saves its state to `~/.pipe/state/<pipeline>/`. State files record which steps completed, their exit codes, and outputs (unless marked [sensitive](/guides/sensitive-data/)). This is what enables `--resume` — see [Resuming Failed Runs](/guides/resuming-runs/).
+
+### State rotation
+
+Control how many state files to keep with the `PIPE_STATE_ROTATE` environment variable:
+
+```bash
+export PIPE_STATE_ROTATE=5   # keep last 5 state files
+```

@@ -1,0 +1,95 @@
+---
+title: Tags & Versioning
+description: Create, list, switch, and delete tags for Hub pipelines.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Closed Beta">
+  Pipe Hub is in closed beta. Features and APIs may change.
+</Aside>
+
+## Listing tags
+
+```bash
+pipe tag myorg/deploy
+```
+
+Shows all local tags with their type, dirty status, and which one is HEAD:
+
+```
+TAG       TYPE       DIRTY  HEAD
+latest    symlink    no     *
+v1.0.0    symlink    no
+dev       editable   yes
+```
+
+## Creating a tag
+
+```bash
+pipe tag myorg/deploy v1.0.0
+```
+
+Creates a new tag pointing to HEAD's current content. Uses blob deduplication — if the content already exists, no new blob is written.
+
+To overwrite an existing tag:
+
+```bash
+pipe tag myorg/deploy v1.0.0 --force
+```
+
+## Deleting a tag
+
+```bash
+pipe tag myorg/deploy v1.0.0 --delete
+```
+
+You cannot delete the last remaining tag. Unused blobs are garbage collected automatically.
+
+## Switching tags
+
+```bash
+pipe switch myorg/deploy v1.0.0
+```
+
+Updates HEAD to point to the specified tag. Without a tag argument, shows an interactive selection list:
+
+```bash
+pipe switch myorg/deploy
+```
+
+### Creating an editable tag
+
+```bash
+pipe switch myorg/deploy -b dev
+```
+
+Creates a new **editable** tag (`dev`) as an independent copy of the current HEAD content, then switches to it. Editable tags are regular files (not symlinks), so you can modify them locally without affecting other tags.
+
+### Switching to a blob
+
+You can switch directly to a content blob by its SHA-256 prefix:
+
+```bash
+pipe switch myorg/deploy abc123
+```
+
+This puts the pipeline in a **detached HEAD** state, where HEAD points directly to a blob rather than a tag.
+
+## Tag types
+
+| Type | Storage | Editable | Dirty detection |
+|------|---------|----------|-----------------|
+| **Symlink** | Symlink to blob | No (read-only) | N/A |
+| **Editable** | Regular file (copy) | Yes | Compares SHA-256 against index |
+
+## Tag naming rules
+
+- 1–128 characters
+- Lowercase alphanumeric, hyphens, dots
+- Must start and end with a lowercase letter or digit
+- No consecutive hyphens or dots

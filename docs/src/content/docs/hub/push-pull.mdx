@@ -1,0 +1,86 @@
+---
+title: Push & Pull
+description: Download and upload pipelines, dirty checks, and checksums.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+<Aside type="caution" title="Closed Beta">
+  Pipe Hub is in closed beta. Features and APIs may change.
+</Aside>
+
+## Pulling a pipeline
+
+```bash
+pipe pull myorg/deploy
+```
+
+Downloads the `latest` tag by default. Specify a tag explicitly:
+
+```bash
+pipe pull myorg/deploy:v1.0.0
+```
+
+### What happens on pull
+
+1. Pipe contacts the Hub API to get the tag metadata (SHA-256, size).
+2. Downloads the YAML content.
+3. Verifies the SHA-256 checksum.
+4. Saves the content as a blob in `~/.pipe/hub/myorg/deploy/blobs/sha256/`.
+5. Creates a tag symlink and updates `index.json`.
+6. Validates the YAML.
+
+### Dirty check
+
+If you have local modifications to the pipeline (editable tag with changes), Pipe warns you and refuses to overwrite. Use `--force` to proceed:
+
+```bash
+pipe pull myorg/deploy --force
+```
+
+## Pushing a pipeline
+
+```bash
+pipe push myorg/deploy
+```
+
+Requires [authentication](/hub/authentication/).
+
+### Tag selection
+
+Tags are assigned with this precedence:
+
+1. **`-t` flags** — explicit tag names
+2. **Inline `:tag`** — from the command argument
+3. **Default** — `latest`
+
+```bash
+# Push with explicit tags
+pipe push myorg/deploy -t v1.0.0 -t latest
+
+# Push with inline tag
+pipe push myorg/deploy:v2.0.0
+```
+
+### What happens on push
+
+1. Pipe reads the local content (from the active tag, a specific tag file, or local files).
+2. Pre-checks remote tags for conflicts (up-to-date content, immutable tag protection).
+3. Uploads the YAML content to Hub.
+4. Hub returns the digest and tag assignments.
+5. Pipe verifies the digest matches.
+6. Re-snapshots the local blob store.
+
+### Immutable vs mutable tags
+
+- On **immutable** pipelines, you cannot overwrite an existing tag (the push fails).
+- On **mutable** pipelines, pushing to an existing tag replaces the content.
+- The `latest` tag can always be overwritten.
+
+## Checksum verification
+
+Both push and pull verify SHA-256 checksums to ensure content integrity. Pipe computes the digest locally and compares it against the Hub response.

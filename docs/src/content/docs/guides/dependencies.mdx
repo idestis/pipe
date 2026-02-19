@@ -1,0 +1,87 @@
+---
+title: Step Dependencies
+description: Explicit depends_on, implicit variable edges, and cycle detection.
+---
+
+## Explicit dependencies
+
+Use `depends_on` to declare that a step must wait for another:
+
+```yaml
+steps:
+  - id: build
+    run: "go build -o app ."
+  - id: test
+    run: "go test ./..."
+  - id: deploy
+    run: "scp app server:/opt/app"
+    depends_on: "build"
+```
+
+`deploy` waits for `build` to complete, while `test` runs independently.
+
+### Multiple dependencies
+
+Pass a list to wait on several steps:
+
+```yaml
+- id: release
+  run: "gh release create v1.0.0"
+  depends_on:
+    - "build"
+    - "test"
+```
+
+`release` runs only after both `build` and `test` succeed.
+
+## Implicit variable edges
+
+Pipe automatically detects when a step references another step's output via `$PIPE_*` environment variables and creates a dependency edge:
+
+```yaml
+steps:
+  - id: get-version
+    run: "git describe --tags --always"
+  - id: build
+    run: "docker build -t app:$PIPE_GET_VERSION ."
+```
+
+Even without `depends_on`, Pipe sees that `build` references `$PIPE_GET_VERSION` (produced by `get-version`) and ensures `get-version` runs first.
+
+Both `$PIPE_FOO` and `${PIPE_FOO}` forms are detected.
+
+## How the DAG is built
+
+1. Each step registers the env vars it produces (`PIPE_<STEP_ID>`, plus `PIPE_<STEP_ID>_<SUBRUN_ID>` for sub-runs).
+2. Explicit `depends_on` edges are added.
+3. Implicit edges are added by scanning all `run` commands for `$PIPE_*` references and matching them to producing steps.
+4. Duplicate edges are removed.
+5. The graph is checked for cycles using Kahn's algorithm.
+
+## Cascade failure
+
+When a step fails, all steps that depend on it (directly or transitively) are skipped. Pipe reports which steps were skipped and why.
+
+## Cycle detection
+
+Pipe rejects pipelines with circular dependencies at parse time:
+
+```
+Error: dependency cycle detected among steps: build, test, deploy
+```
+
+Self-dependencies are also caught:
+
+```
+Error: step "build": self-dependency
+```
+
+## Viewing the graph
+
+Use `pipe inspect <name>` to see each step's dependencies:
+
+```bash
+pipe inspect deploy
+```
+
+The output shows each step with its `depends_on` relationships.

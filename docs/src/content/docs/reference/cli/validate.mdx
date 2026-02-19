@@ -1,0 +1,45 @@
+---
+title: pipe validate
+description: Validate a pipeline without running it.
+---
+
+## Synopsis
+
+```
+pipe validate <name>
+```
+
+## Description
+
+Resolves the pipeline (alias, Hub, or local), parses the YAML, checks for errors, and reports warnings. Does not execute any steps.
+
+Validates:
+- YAML syntax
+- Required fields (`id`, `run` on each step)
+- Dependency graph (unknown references, cycles, self-dependencies)
+- Name conflicts
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<name>` | Pipeline name, alias, or `owner/name` path |
+
+## Flags
+
+None.
+
+## Examples
+
+```bash
+pipe validate deploy
+```
+
+```
+Pipeline "deploy" is valid.
+```
+
+## See also
+
+- [Writing Pipelines](/guides/writing-pipelines/)
+- [YAML Schema](/reference/yaml-schema/)

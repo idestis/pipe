@@ -1,0 +1,33 @@
+---
+title: SSL Renewal
+description: Renew SSL certificates and reload the web server.
+---
+
+## Pipeline
+
+```yaml
+name: ssl-renew
+description: "Renew SSL certificates and reload the web server"
+steps:
+  - id: renew
+    run: "certbot renew --non-interactive --agree-tos"
+
+  - id: verify
+    run: "openssl x509 -in /etc/letsencrypt/live/example.com/fullchain.pem -noout -enddate"
+    depends_on: "renew"
+
+  - id: reload
+    run: "nginx -t && systemctl reload nginx"
+    depends_on: "verify"
+
+  - id: check
+    run: "curl -sI https://example.com | head -1"
+    depends_on: "reload"
+    retry: 2
+```
+
+## Concepts demonstrated
+
+- **[Dependencies](/guides/dependencies/)** — strict linear chain: renew → verify → reload → check
+- **[Retry](/reference/yaml-schema/#step-fields)** — final health check retries twice (server may need a moment after reload)
+- **[Output passing](/guides/writing-pipelines/#passing-output-between-steps)** — certificate expiry date is captured as `$PIPE_VERIFY` for downstream use

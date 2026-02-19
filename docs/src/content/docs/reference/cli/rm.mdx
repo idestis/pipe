@@ -1,0 +1,39 @@
+---
+title: pipe rm
+description: Remove a pipeline.
+---
+
+## Synopsis
+
+```
+pipe rm <name>
+```
+
+## Description
+
+Removes a pipeline and cleans up associated aliases.
+
+- **Local pipeline** (`pipe rm deploy`): Deletes `~/.pipe/files/deploy.yaml`.
+- **Hub pipeline** (`pipe rm myorg/deploy`): Deletes the entire `~/.pipe/hub/myorg/deploy/` directory.
+
+Any aliases pointing to the removed pipeline are also deleted.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<name>` | Pipeline name or `owner/name` path |
+
+## Flags
+
+None.
+
+## Examples
+
+```bash
+# Remove a local pipeline
+pipe rm deploy
+
+# Remove a Hub pipeline
+pipe rm myorg/deploy
+```

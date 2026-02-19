@@ -1,0 +1,59 @@
+---
+title: Parallel Execution
+description: Concurrent commands, sub-runs, semaphore control, and slot acquisition.
+---
+
+## Parallel commands (strings mode)
+
+When `run` is a list of strings, all commands execute concurrently:
+
+```yaml
+- id: quality
+  run:
+    - "npm run lint"
+    - "npm run typecheck"
+    - "npm run test -- --coverage"
+```
+
+All three commands start at the same time. The step succeeds only if **all** commands succeed. Output is not captured in this mode.
+
+## Named sub-runs
+
+When `run` is a list of mappings, commands run concurrently with individual output capture:
+
+```yaml
+- id: build
+  run:
+    - id: linux
+      run: "GOOS=linux go build -o dist/linux ."
+    - id: darwin
+      run: "GOOS=darwin go build -o dist/darwin ."
+    - id: windows
+      run: "GOOS=windows go build -o dist/windows.exe ."
+```
+
+Each sub-run's stdout is available as `PIPE_BUILD_LINUX`, `PIPE_BUILD_DARWIN`, `PIPE_BUILD_WINDOWS`.
+
+## Controlling concurrency
+
+By default, all parallel commands within a step run simultaneously. Set `PIPE_MAX_PARALLEL` to limit concurrency:
+
+```bash
+export PIPE_MAX_PARALLEL=2
+pipe release
+```
+
+With the above, at most 2 commands/sub-runs execute at the same time per step. This is useful when parallel tasks compete for limited resources (CPU, network, API rate limits).
+
+Set to `0` (or leave unset) for unlimited concurrency.
+
+## Strings vs sub-runs
+
+| Feature | Strings | Sub-runs |
+|---------|---------|----------|
+| Execution | Parallel | Parallel |
+| Output captured | No | Yes (per sub-run) |
+| Individual `sensitive` | No | Yes |
+| Env var produced | None | `PIPE_<STEP>_<SUBRUN>` |
+
+Use strings when you just need to run tasks concurrently and don't care about their output (linting, health checks). Use sub-runs when you need to capture output or control sensitivity per command.

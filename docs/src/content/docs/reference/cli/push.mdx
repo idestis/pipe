@@ -1,0 +1,55 @@
+---
+title: pipe push
+description: Upload a pipeline to Hub.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe push <owner>/<name>[:<tag>] [-t <tag> ...]
+```
+
+## Description
+
+Pushes a pipeline to Hub. Requires [authentication](/hub/authentication/). Resolves content from the active tag, a specific tag file, or local files. Verifies digest after upload.
+
+### Tag precedence
+
+1. `-t` flags (highest)
+2. Inline `:<tag>` from the argument
+3. Default: `latest`
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<owner>/<name>` | Hub pipeline path |
+| `:<tag>` | Inline tag (default: `latest`) |
+
+## Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tag <name>` | `-t` | Tag to assign (repeatable) |
+
+## Examples
+
+```bash
+# Push with default "latest" tag
+pipe push myorg/deploy
+
+# Push with explicit tags
+pipe push myorg/deploy -t v1.0.0 -t latest
+
+# Push with inline tag
+pipe push myorg/deploy:v2.0.0
+```
+
+## See also
+
+- [Push & Pull](/hub/push-pull/)
+- [`pipe pull`](/reference/cli/pull/)

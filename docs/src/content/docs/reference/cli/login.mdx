@@ -1,0 +1,45 @@
+---
+title: pipe login
+description: Authenticate with Pipe Hub.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe login
+```
+
+## Description
+
+Authenticates with Pipe Hub using a device authorization flow. Opens your browser to a verification page, waits for approval, and saves credentials to `~/.pipe/credentials.json`.
+
+If already logged in, prompts for confirmation before re-authenticating.
+
+## Arguments
+
+None.
+
+## Flags
+
+None.
+
+## Environment
+
+| Variable | Description |
+|----------|-------------|
+| `PIPEHUB_URL` | Override the Hub API URL (default: `https://hub.getpipe.dev`) |
+
+## Examples
+
+```bash
+pipe login
+```
+
+## See also
+
+- [Authentication](/hub/authentication/)
+- [`pipe logout`](/reference/cli/logout/)

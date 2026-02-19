@@ -1,0 +1,51 @@
+---
+title: pipe pull
+description: Download a pipeline from Hub.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe pull <owner>/<name>[:<tag>]
+```
+
+## Description
+
+Downloads a pipeline from Hub. Defaults to the `latest` tag. Verifies the SHA-256 checksum, saves to the local blob store, and validates the YAML.
+
+Authentication is optional — unauthenticated requests have lower rate limits.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<owner>/<name>` | Hub pipeline path |
+| `:<tag>` | Tag to pull (default: `latest`) |
+
+## Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--force` | `-f` | Overwrite local changes (skip dirty check) |
+
+## Examples
+
+```bash
+# Pull latest tag
+pipe pull myorg/deploy
+
+# Pull specific tag
+pipe pull myorg/deploy:v1.0.0
+
+# Force overwrite local changes
+pipe pull myorg/deploy --force
+```
+
+## See also
+
+- [Push & Pull](/hub/push-pull/)
+- [`pipe push`](/reference/cli/push/)

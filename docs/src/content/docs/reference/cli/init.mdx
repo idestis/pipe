@@ -1,0 +1,46 @@
+---
+title: pipe init
+description: Create a new pipeline.
+---
+
+## Synopsis
+
+```
+pipe init <name>
+```
+
+## Description
+
+Creates a new pipeline with a starter template.
+
+- **Local pipeline** (`pipe init deploy`): Creates `~/.pipe/files/deploy.yaml` with a starter template.
+- **Hub pipeline** (`pipe init myorg/deploy`): Creates the Hub directory structure under `~/.pipe/hub/myorg/deploy/` with a `latest` tag, blob store, and index. Automatically creates an alias if no conflict.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<name>` | Pipeline name (e.g., `deploy`) or Hub path (e.g., `myorg/deploy`) |
+
+## Flags
+
+None.
+
+## Name restrictions
+
+Pipeline names cannot conflict with reserved command words: `init`, `list`, `validate`, `cache`, `login`, `logout`, `pull`, `push`, `mv`, `alias`, `inspect`, `switch`.
+
+## Examples
+
+```bash
+# Create a local pipeline
+pipe init deploy
+
+# Create a Hub pipeline (with auto-alias)
+pipe init myorg/deploy
+```
+
+## See also
+
+- [Quickstart](/getting-started/quickstart/)
+- [Writing Pipelines](/guides/writing-pipelines/)

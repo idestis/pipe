@@ -1,0 +1,42 @@
+---
+title: pipe list
+description: List all pipelines.
+---
+
+## Synopsis
+
+```
+pipe list
+```
+
+## Description
+
+Shows all pipelines (local and Hub) in a table with columns:
+
+| Column | Description |
+|--------|-------------|
+| NAME | Pipeline name or `owner/name` |
+| ALIAS | Alias pointing to this pipeline (if any) |
+| VERSION | Active tag (Hub pipelines only) |
+| DESCRIPTION | Pipeline description from YAML |
+
+## Arguments
+
+None.
+
+## Flags
+
+None.
+
+## Examples
+
+```bash
+pipe list
+```
+
+```
+NAME             ALIAS    VERSION   DESCRIPTION
+deploy           -        -         Build and deploy the app
+backup           -        -         Database backup pipeline
+myorg/release    release  latest    Release automation
+```

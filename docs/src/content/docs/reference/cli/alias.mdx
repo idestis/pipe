@@ -1,0 +1,70 @@
+---
+title: pipe alias
+description: Manage pipeline aliases.
+---
+
+## Synopsis
+
+```
+pipe alias
+pipe alias list
+pipe alias add <alias> <target>
+pipe alias rm <alias>
+pipe alias mv <alias> <new-target>
+```
+
+## Description
+
+Manage short names that map to Hub pipelines (`owner/name`).
+
+## Subcommands
+
+### `pipe alias` / `pipe alias list`
+
+Lists all aliases and their targets.
+
+### `pipe alias add <alias> <target>`
+
+Creates an alias. The alias name cannot conflict with reserved command words or shadow local pipeline files.
+
+| Argument | Description |
+|----------|-------------|
+| `<alias>` | Short name to create |
+| `<target>` | Hub pipeline path (e.g., `myorg/deploy`) |
+
+### `pipe alias rm <alias>`
+
+Removes an alias.
+
+| Argument | Description |
+|----------|-------------|
+| `<alias>` | Alias name to remove |
+
+### `pipe alias mv <alias> <new-target>`
+
+Reassigns an existing alias to a different target.
+
+| Argument | Description |
+|----------|-------------|
+| `<alias>` | Existing alias name |
+| `<new-target>` | New Hub pipeline path |
+
+## Examples
+
+```bash
+# Create an alias
+pipe alias add deploy myorg/deploy
+
+# List aliases
+pipe alias list
+
+# Reassign an alias
+pipe alias mv deploy otherorg/deploy-v2
+
+# Remove an alias
+pipe alias rm deploy
+```
+
+## See also
+
+- [Aliases guide](/guides/aliases/)

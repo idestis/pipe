@@ -1,0 +1,44 @@
+---
+title: Introduction
+description: What Pipe is and why it exists.
+---
+
+Pipe is a minimal, dependency-free pipeline runner for the command line. It replaces fragile, chained shell aliases with clear, structured YAML workflows that are easy to maintain, share, and collaborate on.
+
+## Why Pipe?
+
+Shell scripts grow messy. A deploy command starts as `docker build && docker push && ssh ...` and quickly becomes an unmaintainable one-liner. Pipe gives that one-liner a proper home:
+
+```yaml
+name: deploy
+steps:
+  - id: build
+    run: "docker build -t myapp ."
+  - id: push
+    run: "docker push myapp"
+    depends_on: "build"
+  - id: deploy
+    run: "ssh prod 'docker pull myapp && docker restart myapp'"
+    depends_on: "push"
+    retry: 2
+```
+
+Run it with `pipe deploy`.
+
+## Capabilities
+
+- **Sequential and parallel execution** — steps run in order by default, or in parallel when you use a list of commands
+- **Dependency graph** — explicit `depends_on` declarations and implicit `$PIPE_*` variable edges, with cycle detection
+- **Output passing** — each step's stdout is captured as `PIPE_<STEP_ID>` for downstream steps
+- **Named sub-runs** — parallel commands with individual output capture
+- **Variable templating** — Go `text/template` syntax with three-layer precedence (YAML, environment, CLI)
+- **Step caching** — skip expensive steps that haven't changed, with duration or wall-clock expiry
+- **Sensitive data** — redact outputs from state files, always re-execute on resume
+- **Resume failed runs** — pick up where you left off with `--resume`
+- **Retry on failure** — configurable per-step retry count
+- **Hub (Beta)** — push, pull, and version pipelines with a central registry
+
+## Next steps
+
+- [Install Pipe](/getting-started/installation/) to get started
+- [Quickstart](/getting-started/quickstart/) to create and run your first pipeline

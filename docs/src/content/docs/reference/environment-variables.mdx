@@ -1,0 +1,65 @@
+---
+title: Environment Variables
+description: Environment variables that configure Pipe behavior.
+---
+
+## Configuration variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PIPE_MAX_PARALLEL` | `0` (unlimited) | Maximum number of parallel commands/sub-runs per step |
+| `PIPE_LOG_ROTATE` | `10` | Number of log files to keep per pipeline (0 = keep all) |
+| `PIPE_STATE_ROTATE` | `10` | Number of state files to keep per pipeline (0 = keep all) |
+| `PIPEHUB_URL` | `https://hub.getpipe.dev` | Hub API base URL |
+
+## Step output variables
+
+Each single-command step's stdout is captured and exposed as an environment variable:
+
+```
+PIPE_<STEP_ID>
+```
+
+Hyphens in the step ID become underscores, and the name is uppercased.
+
+| Step ID | Environment Variable |
+|---------|---------------------|
+| `get-version` | `PIPE_GET_VERSION` |
+| `build` | `PIPE_BUILD` |
+| `fetch-data` | `PIPE_FETCH_DATA` |
+
+For named sub-runs, each sub-run produces its own variable:
+
+```
+PIPE_<STEP_ID>_<SUBRUN_ID>
+```
+
+| Step ID | Sub-run ID | Environment Variable |
+|---------|-----------|---------------------|
+| `fetch` | `api-version` | `PIPE_FETCH_API_VERSION` |
+| `build` | `linux` | `PIPE_BUILD_LINUX` |
+
+## User-defined variables
+
+Variables declared in the `vars` section (or passed via CLI) are exposed as:
+
+```
+PIPE_VAR_<KEY>
+```
+
+| Var Key | Environment Variable |
+|---------|---------------------|
+| `name` | `PIPE_VAR_NAME` |
+| `registry` | `PIPE_VAR_REGISTRY` |
+| `deploy-target` | `PIPE_VAR_DEPLOY_TARGET` |
+
+### Overriding variables via environment
+
+You can override a pipeline's declared variable by setting the corresponding `PIPE_VAR_*` environment variable before running:
+
+```bash
+export PIPE_VAR_REGISTRY=ghcr.io/myorg
+pipe deploy
+```
+
+This takes precedence over the YAML default but is overridden by CLI arguments. See [Variables & Templating](/guides/variables/) for the full precedence chain.

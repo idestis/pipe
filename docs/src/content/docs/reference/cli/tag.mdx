@@ -1,0 +1,60 @@
+---
+title: pipe tag
+description: Manage pipeline tags.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe tag <owner>/<name> [tag]
+```
+
+## Description
+
+Manages tags for a Hub pipeline. Without a tag argument, lists all tags. With a tag argument, creates a new tag pointing to HEAD's content.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<owner>/<name>` | Hub pipeline path |
+| `[tag]` | Tag name to create |
+
+## Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--delete` | `-d` | Delete the specified tag |
+| `--force` | `-f` | Overwrite an existing tag |
+
+## Examples
+
+```bash
+# List all tags
+pipe tag myorg/deploy
+
+# Create a new tag
+pipe tag myorg/deploy v1.0.0
+
+# Overwrite an existing tag
+pipe tag myorg/deploy v1.0.0 --force
+
+# Delete a tag
+pipe tag myorg/deploy v1.0.0 --delete
+```
+
+## Tag naming rules
+
+- 1–128 characters
+- Lowercase alphanumeric, hyphens, dots
+- Must start and end with a lowercase letter or digit
+- No consecutive hyphens or dots
+
+## See also
+
+- [Tags & Versioning](/hub/tags/)
+- [`pipe switch`](/reference/cli/switch/)

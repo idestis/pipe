@@ -1,0 +1,53 @@
+---
+title: pipe switch
+description: Switch between pipeline tags.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe switch <owner>/<name> [tag]
+pipe switch <owner>/<name> -b <new-tag>
+```
+
+## Description
+
+Switches the active tag for a Hub pipeline. Without a tag argument, shows an interactive selection list of available tags.
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<owner>/<name>` | Hub pipeline path |
+| `[tag]` | Tag or blob SHA prefix to switch to |
+
+## Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--create <name>` | `-b` | Create a new editable tag from current HEAD and switch to it |
+
+## Examples
+
+```bash
+# Switch to a specific tag
+pipe switch myorg/deploy v1.0.0
+
+# Interactive tag selection
+pipe switch myorg/deploy
+
+# Create an editable tag and switch to it
+pipe switch myorg/deploy -b dev
+
+# Switch to a blob by SHA prefix
+pipe switch myorg/deploy abc123
+```
+
+## See also
+
+- [Tags & Versioning](/hub/tags/)
+- [`pipe tag`](/reference/cli/tag/)

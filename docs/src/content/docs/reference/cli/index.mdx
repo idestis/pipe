@@ -1,0 +1,37 @@
+---
+title: CLI Commands
+description: Overview of all Pipe commands.
+---
+
+## Core commands
+
+| Command | Description |
+|---------|-------------|
+| [`pipe <pipeline>`](/reference/cli/run/) | Run a pipeline |
+| [`pipe init`](/reference/cli/init/) | Create a new pipeline |
+| [`pipe list`](/reference/cli/list/) | List all pipelines |
+| [`pipe validate`](/reference/cli/validate/) | Validate a pipeline without running it |
+| [`pipe inspect`](/reference/cli/inspect/) | Show detailed pipeline metadata |
+| [`pipe rm`](/reference/cli/rm/) | Remove a pipeline |
+| [`pipe cache`](/reference/cli/cache/) | Manage step cache entries |
+| [`pipe alias`](/reference/cli/alias/) | Manage pipeline aliases |
+
+## Hub commands (Beta)
+
+| Command | Description |
+|---------|-------------|
+| [`pipe login`](/reference/cli/login/) | Authenticate with Pipe Hub |
+| [`pipe logout`](/reference/cli/logout/) | Remove stored credentials |
+| [`pipe pull`](/reference/cli/pull/) | Download a pipeline from Hub |
+| [`pipe push`](/reference/cli/push/) | Upload a pipeline to Hub |
+| [`pipe mv`](/reference/cli/mv/) | Convert a local pipeline to Hub |
+| [`pipe switch`](/reference/cli/switch/) | Switch between pipeline tags |
+| [`pipe tag`](/reference/cli/tag/) | Manage pipeline tags |
+
+## Global flags
+
+| Flag | Description |
+|------|-------------|
+| `-v`, `--verbose` | Increase output verbosity (`-v` verbose, `-vv` debug) |
+| `--version` | Print version and exit |
+| `-h`, `--help` | Show help |
