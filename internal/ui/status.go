@@ -125,14 +125,14 @@ func (s *StatusUI) Finish() {
 func (s *StatusUI) render() {
 	// Move cursor up to overwrite previous frame
 	if s.lines > 0 {
-		fmt.Fprintf(s.w, "\033[%dA", s.lines)
+		_, _ = fmt.Fprintf(s.w, "\033[%dA", s.lines)
 	}
 
 	for _, r := range s.rows {
 		icon := icons[r.status]
 		suffix := statusSuffix(r)
 		// \033[2K clears the entire line
-		fmt.Fprintf(s.w, "\033[2K%s %-*s  %s\n", icon, s.maxWidth, r.id, suffix)
+		_, _ = fmt.Fprintf(s.w, "\033[2K%s %-*s  %s\n", icon, s.maxWidth, r.id, suffix)
 	}
 
 	s.lines = len(s.rows)

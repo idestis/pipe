@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/idestis/pipe/internal/auth"
 	"github.com/idestis/pipe/internal/hub"
-	"github.com/idestis/pipe/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -158,21 +156,6 @@ func maxArgs(max int, usage string) cobra.PositionalArgs {
 		}
 		return nil
 	}
-}
-
-// confirmPrompt prints a y/N prompt to stderr and reads the response from
-// stdin. Returns false immediately if stdin is not a terminal (CI-safe).
-func confirmPrompt(prompt string) bool {
-	if !ui.IsTTY(os.Stdin) {
-		return false
-	}
-	fmt.Fprint(os.Stderr, prompt)
-	scanner := bufio.NewScanner(os.Stdin)
-	if !scanner.Scan() {
-		return false
-	}
-	answer := strings.TrimSpace(strings.ToLower(scanner.Text()))
-	return answer == "y" || answer == "yes"
 }
 
 // requireAuth loads credentials and returns them, or an error if not logged in.

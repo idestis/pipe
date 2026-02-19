@@ -7,8 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "dev"
-
 var resumeFlag string
 var apiURL string
 var verbosity int
@@ -93,7 +91,6 @@ func initConfig() {
 
 // SetVersion sets the version string displayed by --version.
 func SetVersion(v string) {
-	version = v
 	rootCmd.Version = v
 }
 

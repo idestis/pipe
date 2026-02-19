@@ -59,7 +59,7 @@ func (c *Client) InitiateDeviceAuth(req *DeviceAuthRequest) (*DeviceAuthResponse
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -80,7 +80,7 @@ func (c *Client) PollDeviceAuthStatus(deviceCode string) (*DeviceAuthStatusRespo
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
