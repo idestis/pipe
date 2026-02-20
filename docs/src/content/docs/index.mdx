@@ -19,15 +19,19 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Sequential & Parallel" icon="rocket">
-    Steps run in order by default, or concurrently when you use a list of commands or named sub-runs.
+    **Run steps in order or in parallel — automatically.**
+    Pipe executes commands sequentially by default, or concurrently when tasks are independent, giving you faster and predictable pipeline runs.
   </Card>
-  <Card title="Dependency graph" icon="random">
-    Declare `depends_on` or let Pipe detect `$PIPE_*` variable edges automatically. Cycles are caught at parse time.
+  <Card title="Dependency Graph" icon="random">
+    **Define relationships, Pipe handles execution order.**
+    Declare dependencies explicitly or let Pipe detect them automatically. Cycles are caught early to prevent broken pipelines.
   </Card>
   <Card title="Variables & Templating" icon="setting">
-    Go template syntax with three-layer precedence — YAML defaults, environment overrides, CLI arguments.
+    **Make pipelines reusable and configurable.**
+    Use built-in templating with support for defaults, environment overrides, and CLI arguments — no duplication required.
   </Card>
-  <Card title="Hub (Beta)" icon="cloud">
-    Push, pull, tag, and version pipelines with a central registry.
+  <Card title="Pipe Hub" icon="cloud">
+    **Publish, install, and version pipelines.**
+    Share pipelines through the Hub, reuse them across projects, and keep workflows consistent everywhere.
   </Card>
 </CardGrid>
