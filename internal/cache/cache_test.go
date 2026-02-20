@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/idestis/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/config"
 )
 
 func overrideCacheDir(t *testing.T) string {

@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/idestis/pipe/internal/parser"
+	"github.com/getpipe-dev/pipe/internal/parser"
 	"github.com/spf13/cobra"
 )
 

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/hub"
-	"github.com/idestis/pipe/internal/resolve"
+	"github.com/getpipe-dev/pipe/internal/hub"
+	"github.com/getpipe-dev/pipe/internal/resolve"
 	"github.com/spf13/cobra"
 )
 

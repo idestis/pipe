@@ -12,12 +12,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/idestis/pipe/internal/cache"
-	"github.com/idestis/pipe/internal/graph"
-	"github.com/idestis/pipe/internal/logging"
-	"github.com/idestis/pipe/internal/model"
-	"github.com/idestis/pipe/internal/state"
-	"github.com/idestis/pipe/internal/ui"
+	"github.com/getpipe-dev/pipe/internal/cache"
+	"github.com/getpipe-dev/pipe/internal/graph"
+	"github.com/getpipe-dev/pipe/internal/logging"
+	"github.com/getpipe-dev/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/state"
+	"github.com/getpipe-dev/pipe/internal/ui"
 )
 
 type Runner struct {

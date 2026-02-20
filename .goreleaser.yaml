@@ -19,10 +19,10 @@ archives:
 brews:
   - directory: Formula
     repository:
-      owner: idestis
+      owner: getpipe-dev
       name: homebrew-pipe
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    homepage: https://github.com/idestis/pipe
+    homepage: https://github.com/getpipe-dev/pipe
     description: CI-friendly pipeline runner inspired by Taskfile
     license: MIT
     install: |

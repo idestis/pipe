@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/idestis/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/model"
 )
 
 func steps(ids ...string) []model.Step {

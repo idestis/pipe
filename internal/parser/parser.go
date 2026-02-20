@@ -8,11 +8,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/idestis/pipe/internal/config"
-	"github.com/idestis/pipe/internal/graph"
-	"github.com/idestis/pipe/internal/hub"
-	"github.com/idestis/pipe/internal/model"
-	"github.com/idestis/pipe/internal/resolve"
+	"github.com/getpipe-dev/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/graph"
+	"github.com/getpipe-dev/pipe/internal/hub"
+	"github.com/getpipe-dev/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/resolve"
 	"gopkg.in/yaml.v3"
 )
 

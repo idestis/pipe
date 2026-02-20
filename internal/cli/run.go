@@ -5,14 +5,14 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/config"
-	"github.com/idestis/pipe/internal/hub"
-	"github.com/idestis/pipe/internal/logging"
-	"github.com/idestis/pipe/internal/parser"
-	"github.com/idestis/pipe/internal/resolve"
-	"github.com/idestis/pipe/internal/runner"
-	"github.com/idestis/pipe/internal/state"
-	"github.com/idestis/pipe/internal/ui"
+	"github.com/getpipe-dev/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/hub"
+	"github.com/getpipe-dev/pipe/internal/logging"
+	"github.com/getpipe-dev/pipe/internal/parser"
+	"github.com/getpipe-dev/pipe/internal/resolve"
+	"github.com/getpipe-dev/pipe/internal/runner"
+	"github.com/getpipe-dev/pipe/internal/state"
+	"github.com/getpipe-dev/pipe/internal/ui"
 )
 
 func showPipelineHelp(name string) error {

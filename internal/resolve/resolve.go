@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/config"
-	"github.com/idestis/pipe/internal/hub"
+	"github.com/getpipe-dev/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/hub"
 )
 
 // PipeKind distinguishes local pipes from hub pipes.

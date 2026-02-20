@@ -13,13 +13,13 @@ Full documentation is available at **[docs.getpipe.dev](https://docs.getpipe.dev
 ### Homebrew
 
 ```
-brew tap idestis/pipe
+brew tap getpipe-dev/pipe
 brew install pipe
 ```
 
 ### GitHub Releases
 
-Download the latest binary from the [Releases](https://github.com/idestis/pipe/releases) page.
+Download the latest binary from the [Releases](https://github.com/getpipe-dev/pipe/releases) page.
 
 ## Quick Example
 

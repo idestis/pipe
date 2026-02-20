@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/idestis/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/model"
 )
 
 // secretPatterns maps a human-readable description to a regex that matches

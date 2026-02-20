@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/idestis/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/config"
 )
 
 // PipePath returns the directory for a hub pipe: ~/.pipe/hub/{owner}/{name}

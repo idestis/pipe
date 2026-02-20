@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/idestis/pipe/internal/cache"
+	"github.com/getpipe-dev/pipe/internal/cache"
 	"github.com/spf13/cobra"
 )
 

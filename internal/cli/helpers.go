@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/auth"
-	"github.com/idestis/pipe/internal/hub"
+	"github.com/getpipe-dev/pipe/internal/auth"
+	"github.com/getpipe-dev/pipe/internal/hub"
 	"github.com/spf13/cobra"
 )
 

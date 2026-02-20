@@ -13,7 +13,7 @@ export default defineConfig({
       description:
         "A minimal, dependency-free pipeline runner for the command line.",
       social: {
-        github: "https://github.com/idestis/pipe",
+        github: "https://github.com/getpipe-dev/pipe",
       },
       customCss: ["./src/styles/custom.css"],
       sidebar: [

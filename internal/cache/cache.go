@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/idestis/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/config"
 )
 
 // Entry represents a cached step result.

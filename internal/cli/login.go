@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/auth"
+	"github.com/getpipe-dev/pipe/internal/auth"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )

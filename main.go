@@ -1,6 +1,6 @@
 package main
 
-import "github.com/idestis/pipe/internal/cli"
+import "github.com/getpipe-dev/pipe/internal/cli"
 
 // version is set by goreleaser via ldflags
 var version = "dev"

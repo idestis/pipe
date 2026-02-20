@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/idestis/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/config"
 )
 
 type Credentials struct {

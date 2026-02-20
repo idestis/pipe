@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/parser"
-	"github.com/idestis/pipe/internal/resolve"
+	"github.com/getpipe-dev/pipe/internal/parser"
+	"github.com/getpipe-dev/pipe/internal/resolve"
 	"github.com/spf13/cobra"
 )
 

@@ -8,7 +8,7 @@ import (
 	"sort"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/config"
 )
 
 // RotateLogs removes old log files for the given pipeline, keeping the newest

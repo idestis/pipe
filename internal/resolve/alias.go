@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/idestis/pipe/internal/config"
+	"github.com/getpipe-dev/pipe/internal/config"
 )
 
 // AliasEntry maps an alias name to a target pipe reference.

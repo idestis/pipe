@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/idestis/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/model"
 )
 
 // Graph represents a DAG of pipeline step dependencies.

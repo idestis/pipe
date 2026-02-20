@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/log"
-	"github.com/idestis/pipe/internal/auth"
+	"github.com/getpipe-dev/pipe/internal/auth"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/idestis/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/model"
 )
 
 func TestDetectSecrets_AWSKey(t *testing.T) {

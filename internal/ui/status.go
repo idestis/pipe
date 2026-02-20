@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/idestis/pipe/internal/model"
+	"github.com/getpipe-dev/pipe/internal/model"
 )
 
 // Status represents the current state of a pipeline step.
