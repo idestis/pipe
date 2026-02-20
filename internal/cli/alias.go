@@ -19,7 +19,8 @@ var reservedNames = map[string]bool{
 
 var aliasCmd = &cobra.Command{
 	Use:   "alias",
-	Short: "Manage pipeline aliases",
+	Short:   "Manage pipeline aliases",
+	GroupID: "core",
 	Args:  noArgs("pipe alias"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return aliasListRun()

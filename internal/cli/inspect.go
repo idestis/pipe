@@ -14,7 +14,8 @@ import (
 
 var inspectCmd = &cobra.Command{
 	Use:   "inspect <name>",
-	Short: "Show detailed info about a pipeline",
+	Short:   "Show detailed pipeline metadata",
+	GroupID: "core",
 	Args:  exactArgs(1, "pipe inspect <name>"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ref, err := resolve.Resolve(args[0])

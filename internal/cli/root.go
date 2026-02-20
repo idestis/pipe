@@ -49,22 +49,31 @@ func init() {
 	rootCmd.Flags().StringVar(&resumeFlag, "resume", "", "resume a previous run by ID")
 	rootCmd.SetVersionTemplate("pipe-{{.Version}}\n")
 
+	cobra.EnableCommandSorting = false
 	cobra.OnInitialize(initConfig, initVerbosity)
 
+	rootCmd.AddGroup(
+		&cobra.Group{ID: "core", Title: "Core Commands:"},
+		&cobra.Group{ID: "hub", Title: "Hub Commands (Beta):"},
+	)
+
+	// Core commands
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(lintCmd)
+	rootCmd.AddCommand(inspectCmd)
+	rootCmd.AddCommand(rmCmd)
 	rootCmd.AddCommand(cacheCmd)
+	rootCmd.AddCommand(aliasCmd)
+
+	// Hub commands
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(pushCmd)
 	rootCmd.AddCommand(mvCmd)
-	rootCmd.AddCommand(aliasCmd)
-	rootCmd.AddCommand(inspectCmd)
 	rootCmd.AddCommand(switchCmd)
 	rootCmd.AddCommand(tagCmd)
-	rootCmd.AddCommand(rmCmd)
 }
 
 func initVerbosity() {

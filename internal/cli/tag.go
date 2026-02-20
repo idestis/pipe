@@ -23,7 +23,8 @@ func init() {
 
 var tagCmd = &cobra.Command{
 	Use:   "tag <owner>/<name> [tag]",
-	Short: "List, create, or delete tags for a hub pipeline",
+	Short:   "Manage tags for a hub pipeline",
+	GroupID: "hub",
 	Long: `Manage tags for a hub pipeline.
 
 Without a tag argument, lists all tags.

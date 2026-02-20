@@ -15,7 +15,8 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init <name>",
-	Short: "Create a new pipeline",
+	Short:   "Create a new pipeline",
+	GroupID: "core",
 	Args:  exactArgs(1, "pipe init <name>"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		arg := args[0]

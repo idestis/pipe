@@ -20,7 +20,8 @@ func init() {
 
 var pushCmd = &cobra.Command{
 	Use:   "push <owner>/<name>[:<tag>]",
-	Short: "Push a pipeline to Pipe Hub",
+	Short:   "Push a pipeline to Pipe Hub",
+	GroupID: "hub",
 	Args:  exactArgs(1, "pipe push <owner>/<name>[:<tag>]"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		creds, err := requireAuth()

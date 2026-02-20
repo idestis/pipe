@@ -4,7 +4,8 @@ import "github.com/spf13/cobra"
 
 var cacheCmd = &cobra.Command{
 	Use:   "cache",
-	Short: "Manage step cache",
+	Short:   "Manage step cache entries",
+	GroupID: "core",
 }
 
 func init() {

@@ -14,7 +14,8 @@ import (
 
 var loginCmd = &cobra.Command{
 	Use:   "login",
-	Short: "Authenticate with Pipe Hub",
+	Short:   "Authenticate with Pipe Hub",
+	GroupID: "hub",
 	Args:  noArgs("pipe login"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Debug("checking existing credentials")

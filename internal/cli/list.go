@@ -9,7 +9,8 @@ import (
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all pipelines",
+	Short:   "List all pipelines",
+	GroupID: "core",
 	Args:  noArgs("pipe list"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		infos, err := parser.ListAllPipelines()

@@ -13,6 +13,7 @@ var lintCmd = &cobra.Command{
 	Use:     "lint <name>",
 	Aliases: []string{"validate"},
 	Short:   "Lint a pipeline for errors and warnings",
+	GroupID: "core",
 	Args:    exactArgs(1, "pipe lint <name>"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ref, err := resolve.Resolve(args[0])

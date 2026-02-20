@@ -14,7 +14,8 @@ import (
 
 var mvCmd = &cobra.Command{
 	Use:   "mv <name> <owner>/<name>",
-	Short: "Convert a local pipeline to a hub namespace",
+	Short:   "Move a local pipeline to Pipe Hub",
+	GroupID: "hub",
 	Long:  "Converts a local pipeline from ~/.pipe/files/ into the hub layout under ~/.pipe/hub/, enabling tagging, versioning, and pushing to Pipe Hub.",
 	Args:  exactArgs(2, "pipe mv <name> <owner>/<name>"),
 	RunE: func(cmd *cobra.Command, args []string) error {

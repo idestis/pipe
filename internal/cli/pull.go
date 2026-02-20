@@ -19,7 +19,8 @@ func init() {
 
 var pullCmd = &cobra.Command{
 	Use:   "pull <owner>/<name>[:<tag>]",
-	Short: "Pull a pipeline from Pipe Hub",
+	Short:   "Pull a pipeline from Pipe Hub",
+	GroupID: "hub",
 	Args:  exactArgs(1, "pipe pull <owner>/<name>[:<tag>]"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Auth is optional for pull — unauthenticated requests have lower rate limits.

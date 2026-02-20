@@ -14,7 +14,8 @@ import (
 
 var rmCmd = &cobra.Command{
 	Use:   "rm <name> or <owner>/<name>",
-	Short: "Remove a pipeline and its aliases",
+	Short:   "Remove a pipeline",
+	GroupID: "core",
 	Args:  exactArgs(1, "pipe rm <name>"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		owner, name, _ := resolve.ParsePipeArg(args[0])

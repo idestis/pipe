@@ -24,7 +24,8 @@ func init() {
 
 var switchCmd = &cobra.Command{
 	Use:   "switch <owner>/<name> [tag]",
-	Short: "Switch the active tag for a hub pipeline",
+	Short:   "Switch the active tag for a hub pipeline",
+	GroupID: "hub",
 	Args:  rangeArgs(1, 2, "pipe switch <owner>/<name> [tag]"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		owner, name, _ := resolve.ParsePipeArg(args[0])

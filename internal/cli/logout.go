@@ -10,7 +10,8 @@ import (
 
 var logoutCmd = &cobra.Command{
 	Use:   "logout",
-	Short: "Log out of Pipe Hub",
+	Short:   "Log out of Pipe Hub",
+	GroupID: "hub",
 	Args:  noArgs("pipe logout"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		creds, err := auth.LoadCredentials()
