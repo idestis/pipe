@@ -8,11 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var logoutCmd = &cobra.Command{
-	Use:     "logout",
-	Short:   "Log out of Pipe Hub",
+var whoamiCmd = &cobra.Command{
+	Use:     "whoami",
+	Short:   "Show the currently authenticated user",
 	GroupID: "hub",
-	Args:    noArgs("pipe logout"),
+	Args:    noArgs("pipe whoami"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		creds, err := auth.LoadCredentials()
 		if err != nil {
@@ -23,21 +23,18 @@ var logoutCmd = &cobra.Command{
 			return nil
 		}
 
-		// Revoke device + API key on the server
 		baseURL := creds.APIBaseURL
 		if baseURL == "" {
 			baseURL = apiURL
 		}
 		client := auth.NewClient(baseURL)
-		if err := client.Logout(creds.APIKey); err != nil {
-			log.Warn("failed to revoke credentials on server, continuing with local logout", "error", err)
+		result, err := client.Validate(creds.APIKey)
+		if err != nil {
+			log.Warn("credentials are invalid, run \"pipe login\" to re-authenticate")
+			return nil
 		}
 
-		if err := auth.DeleteCredentials(); err != nil {
-			return fmt.Errorf("removing credentials: %w", err)
-		}
-
-		log.Info("logged out successfully")
+		fmt.Printf("Logged in as %s\n", result.Username)
 		return nil
 	},
 }

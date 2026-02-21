@@ -15,7 +15,9 @@ pipe logout
 
 ## Description
 
-Deletes stored credentials from `~/.pipe/credentials.json`.
+Revokes the device and API key on the Pipe Hub server, then deletes stored credentials from `~/.pipe/credentials.json`.
+
+If the server is unreachable or the key is already revoked, the local credentials are still deleted with a warning.
 
 ## Arguments
 
@@ -35,3 +37,4 @@ pipe logout
 
 - [Authentication](/hub/authentication/)
 - [`pipe login`](/reference/cli/login/)
+- [`pipe whoami`](/reference/cli/whoami/)

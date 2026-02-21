@@ -1,0 +1,48 @@
+---
+title: pipe whoami
+description: Show the currently authenticated user.
+sidebar:
+  badge:
+    text: Beta
+    variant: caution
+---
+
+## Synopsis
+
+```
+pipe whoami
+```
+
+## Description
+
+Checks if stored credentials are valid by calling the Pipe Hub API, and displays the authenticated username.
+
+- If not logged in, prints "not logged in".
+- If credentials are invalid or revoked, prints a warning to re-authenticate.
+- If credentials are valid, prints the authenticated username.
+
+## Arguments
+
+None.
+
+## Flags
+
+None.
+
+## Examples
+
+```bash
+# Check who you're logged in as
+pipe whoami
+# Logged in as alice
+
+# After logging out or revoking credentials
+pipe whoami
+# not logged in
+```
+
+## See also
+
+- [Authentication](/hub/authentication/)
+- [`pipe login`](/reference/cli/login/)
+- [`pipe logout`](/reference/cli/logout/)

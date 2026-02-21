@@ -30,13 +30,21 @@ This will:
 
 If you're already logged in, Pipe prompts for confirmation before re-authenticating.
 
+## Checking your identity
+
+```bash
+pipe whoami
+```
+
+Verifies your stored credentials against the Hub and displays your username. Useful for checking if credentials are still valid after revoking a device from the web dashboard.
+
 ## Logging out
 
 ```bash
 pipe logout
 ```
 
-Removes stored credentials from `~/.pipe/credentials.json`.
+Revokes the device and API key on the server, then removes stored credentials from `~/.pipe/credentials.json`. If the server is unreachable, local credentials are still deleted with a warning.
 
 ## Unauthenticated access
 

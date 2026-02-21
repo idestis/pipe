@@ -165,6 +165,7 @@ export default defineConfig({
               items: [
                 { slug: "reference/cli/login" },
                 { slug: "reference/cli/logout" },
+                { slug: "reference/cli/whoami" },
                 { slug: "reference/cli/pull" },
                 { slug: "reference/cli/push" },
                 { slug: "reference/cli/mv" },

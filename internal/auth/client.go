@@ -73,6 +73,64 @@ func (c *Client) InitiateDeviceAuth(req *DeviceAuthRequest) (*DeviceAuthResponse
 	return &result, nil
 }
 
+// Logout revokes the device and API key on the server.
+// Treats 204 and 401 as success (key already revoked is fine for logout).
+func (c *Client) Logout(apiKey string) error {
+	req, err := http.NewRequest(http.MethodPost, c.BaseURL+"/api/v1/auth/device/logout", nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusUnauthorized {
+		return nil
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("server returned %d: %s", resp.StatusCode, bytes.TrimSpace(body))
+}
+
+type ValidateResponse struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+}
+
+// Validate checks if the API key is still valid by calling GET /api/v1/users/me.
+func (c *Client) Validate(apiKey string) (*ValidateResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, c.BaseURL+"/api/v1/users/me", nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return nil, fmt.Errorf("credentials are invalid or revoked")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("server returned %d: %s", resp.StatusCode, bytes.TrimSpace(body))
+	}
+
+	var result ValidateResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+	return &result, nil
+}
+
 func (c *Client) PollDeviceAuthStatus(deviceCode string) (*DeviceAuthStatusResponse, error) {
 	resp, err := c.HTTPClient.Get(
 		c.BaseURL + "/api/v1/auth/device/status?device_code=" + deviceCode,

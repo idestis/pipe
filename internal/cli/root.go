@@ -69,6 +69,7 @@ func init() {
 	// Hub commands
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
+	rootCmd.AddCommand(whoamiCmd)
 	rootCmd.AddCommand(pullCmd)
 	rootCmd.AddCommand(pushCmd)
 	rootCmd.AddCommand(mvCmd)
