@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0](https://github.com/getpipe-dev/pipe/compare/v2.2.0...v2.3.0) (2026-02-22)
+
+
+### Features
+
+* **cli:** add server-side logout revocation and whoami command ([e4b494d](https://github.com/getpipe-dev/pipe/commit/e4b494d88dd194614a34ac2058b1dd5680b48525))
+* **docs:** add SEO improvements — structured data, favicons, OG image, and footer ([93aab01](https://github.com/getpipe-dev/pipe/commit/93aab016a951c7de7121ef8310625c298521b9c1))
+
 ## [2.2.0](https://github.com/getpipe-dev/pipe/compare/v2.1.0...v2.2.0) (2026-02-20)
 
 
