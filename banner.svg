@@ -78,7 +78,7 @@
   </g>
 
   <!-- Left logo (replace href with your hosted path if needed) -->
-  <image href="./pipe.png" x="56" y="72" width="170" height="170" preserveAspectRatio="xMidYMid meet"/>
+  <image href="https://getpipe.dev/assets/img/logo.png" x="56" y="72" width="170" height="170" preserveAspectRatio="xMidYMid meet"/>
 
   <!-- Wordmark -->
   <text x="260" y="148" class="title" font-size="86">
