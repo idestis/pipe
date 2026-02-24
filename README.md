@@ -48,7 +48,7 @@ pipe deploy
 ## PipeHub
 
 <a href="https://hub.getpipe.dev">
-  <img src="./banner.svg" alt="PipeHub - Share and collaborate pipelines with a team">
+  <img src="./banner.png" alt="Pipe Hub - Share and collaborate pipelines with a team">
 </a>
 
 ## License
