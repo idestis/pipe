@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320">
+  <defs>
+    <!-- Background -->
+    <radialGradient id="bgGlow" cx="30%" cy="50%" r="85%">
+      <stop offset="0%" stop-color="#0E2032"/>
+      <stop offset="55%" stop-color="#071427"/>
+      <stop offset="100%" stop-color="#050E1D"/>
+    </radialGradient>
+
+    <!-- Divider gradient: strongest in middle, fades at ends -->
+    <linearGradient id="dividerFade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#BFD2E8" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#BFD2E8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#BFD2E8" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Soft glow for lines -->
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0.12
+                0 0 1 0 0.2
+                0 0 0 0.75 0" result="c"/>
+      <feMerge>
+        <feMergeNode in="c"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glow for dots -->
+    <filter id="dotGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Card shadow -->
+    <filter id="cardShadow" x="-10%" y="-20%" width="120%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feOffset dy="6" result="off"/>
+      <feColorMatrix in="off" type="matrix"
+        values="0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0.35 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <style>
+      .title{
+        font-family:"PT Sans","Fira Code",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        font-weight:700;
+        letter-spacing:-0.6px;
+      }
+      .subtitle{
+        font-family:"PT Sans","Fira Code",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        font-weight:400;
+        opacity:0.82;
+      }
+      .hint{
+        font-family:"PT Sans","Fira Code",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+        font-weight:400;
+        opacity:0.35;
+      }
+    </style>
+  </defs>
+
+  <!-- Card -->
+  <g filter="url(#cardShadow)">
+    <rect x="10" y="10" width="1180" height="300" rx="26"
+          fill="url(#bgGlow)" stroke="#1C2B3F" stroke-opacity="0.9"/>
+  </g>
+
+  <!-- Left logo (replace href with your hosted path if needed) -->
+  <image href="./pipe.png" x="56" y="72" width="170" height="170" preserveAspectRatio="xMidYMid meet"/>
+
+  <!-- Wordmark -->
+  <text x="260" y="148" class="title" font-size="86">
+    <tspan fill="#F2F6FF">pipe</tspan><tspan fill="#38E6D3">hub</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="262" y="192" class="subtitle" font-size="26" fill="#BFD2E8">
+    Share and collaborate pipelines with a team
+  </text>
+
+  <!-- Divider (between subtitle and hint), strongest mid, fades at ends -->
+  <rect x="262" y="210" width="520" height="2" rx="1" fill="url(#dividerFade)"/>
+
+  <!-- Hint -->
+  <text x="262" y="240" class="hint" font-size="20" fill="#9BB2CC">
+    Portable, versioned pipelines with one CLI
+  </text>
+
+  <!-- Right-side: 3 flows with uneven steps, staged merges: (A+B)->M1, C->M2, then M1+M2->OUT -->
+  <g transform="translate(770 92)" opacity="0.95">
+    <!-- subtle grid -->
+    <g stroke="#2E5C7A" stroke-opacity="0.12" stroke-width="2">
+      <line x1="-10" y1="25" x2="365" y2="25"/>
+      <line x1="-10" y1="70" x2="365" y2="70"/>
+      <line x1="-10" y1="115" x2="365" y2="115"/>
+      <line x1="55" y1="0" x2="55" y2="145"/>
+      <line x1="145" y1="0" x2="145" y2="145"/>
+      <line x1="235" y1="0" x2="235" y2="145"/>
+      <line x1="325" y1="0" x2="325" y2="145"/>
+    </g>
+
+    <!-- Curvy flow lines (minimal, varied steps) -->
+    <g fill="none" stroke="#46E7D6" stroke-opacity="0.40" stroke-width="4"
+       stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)">
+
+      <!-- Flow A (longer: 3 steps) -->
+      <path d="M0 25 C18 25, 32 25, 52 25"/>
+      <path d="M52 25 C78 25, 88 18, 108 18 C126 18, 134 28, 146 32"/>
+
+      <!-- Flow B (shorter: 2 steps) -->
+      <path d="M0 55 C22 55, 38 55, 60 55"/>
+      <path d="M60 55 C92 55, 112 48, 132 40 C140 36, 142 34, 146 32"/>
+
+      <!-- Merge M1 (A+B) happens at dot (146,32) -->
+      <!-- then M1 to M2 -->
+      <path d="M146 32 C175 32, 192 48, 210 62 C224 73, 232 70, 240 70"/>
+
+      <!-- Flow C (1 step: direct-ish into M2) -->
+      <path d="M0 115 C45 115, 92 115, 120 100 C145 86, 165 72, 240 70"/>
+
+      <!-- Merge M2 at dot (240,70), then output -->
+      <path d="M240 70 C275 70, 312 70, 350 70"/>
+    </g>
+
+    <!-- Dots -->
+    <g>
+      <!-- Inputs -->
+      <circle cx="0" cy="25" r="4.5" fill="#46E7D6" opacity="0.65"/>
+      <circle cx="0" cy="55" r="4.5" fill="#46E7D6" opacity="0.65"/>
+      <circle cx="0" cy="115" r="4.5" fill="#46E7D6" opacity="0.65"/>
+
+      <!-- Step dots (uneven) -->
+      <circle cx="52" cy="25" r="4.2" fill="#46E7D6" opacity="0.50"/>   <!-- A step -->
+      <circle cx="60" cy="55" r="4.2" fill="#46E7D6" opacity="0.50"/>   <!-- B step -->
+      <circle cx="108" cy="18" r="3.6" fill="#46E7D6" opacity="0.35"/>  <!-- A extra step -->
+
+      <!-- Merge M1 -->
+      <circle cx="146" cy="32" r="7.2" fill="#46E7D6" filter="url(#dotGlow)"/>
+
+      <!-- Merge M2 -->
+      <circle cx="240" cy="70" r="7.8" fill="#46E7D6" filter="url(#dotGlow)"/>
+
+      <!-- Output -->
+      <circle cx="350" cy="70" r="7.8" fill="#46E7D6" filter="url(#dotGlow)"/>
+
+      <!-- small rhythm dot on trunk -->
+      <circle cx="300" cy="70" r="5.2" fill="#46E7D6" opacity="0.70"/>
+    </g>
+  </g>
+</svg>
