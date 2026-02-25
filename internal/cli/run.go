@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -30,6 +31,9 @@ func showPipelineHelp(name string) error {
 	fmt.Printf("Pipeline: %s\n", ref.Name)
 	if pipeline.Description != "" {
 		fmt.Printf("          %s\n", pipeline.Description)
+	}
+	if pipeline.DotFile != "" {
+		fmt.Printf("Env File: %s\n", pipeline.DotFile)
 	}
 	fmt.Println()
 
@@ -154,7 +158,28 @@ func runPipeline(name string, overrides map[string]string) error {
 		}
 	}
 
-	vars := runner.ResolveVars(pipeline.Vars, overrides)
+	var dotFileVars map[string]string
+	if pipeline.DotFile != "" {
+		var dotFileWarns []string
+		dotFileVars, dotFileWarns, err = runner.ParseDotFile(pipeline.DotFile)
+		switch {
+		case errors.Is(err, os.ErrNotExist):
+			// Missing file: silent skip.
+		case err != nil:
+			log.Warn("dot_file could not be fully read", "path", pipeline.DotFile, "err", err)
+		}
+		for _, w := range dotFileWarns {
+			log.Warn(w)
+		}
+	}
+
+	vars, resolveWarns := runner.ResolveVars(pipeline.Vars, dotFileVars, overrides)
+	for _, w := range resolveWarns {
+		log.Warn(w)
+	}
+	for _, w := range runner.UnmatchedEnvVarWarnings(pipeline.Vars) {
+		log.Warn(w)
+	}
 	log.Debug("resolved variables", "total", len(vars), "overrides", len(overrides))
 	r := runner.New(pipeline, rs, plog, vars, statusUI, verbosity)
 	if resumeFlag != "" {

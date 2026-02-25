@@ -9,6 +9,7 @@ import (
 type Pipeline struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
+	DotFile     string            `yaml:"dot_file"`
 	Vars        map[string]string `yaml:"vars"`
 	Steps       []Step            `yaml:"steps"`
 }

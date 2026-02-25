@@ -54,6 +54,9 @@ var inspectCmd = &cobra.Command{
 		if pipeline.Description != "" {
 			fmt.Printf("Description: %s\n", pipeline.Description)
 		}
+		if pipeline.DotFile != "" {
+			fmt.Printf("Dot File:    %s\n", pipeline.DotFile)
+		}
 		fmt.Printf("Steps:       %d\n", len(pipeline.Steps))
 
 		// Build graph for dependency info
