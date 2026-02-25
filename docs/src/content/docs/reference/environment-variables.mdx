@@ -11,6 +11,7 @@ description: Environment variables that configure Pipe behavior.
 | `PIPE_LOG_ROTATE` | `10` | Number of log files to keep per pipeline (0 = keep all) |
 | `PIPE_STATE_ROTATE` | `10` | Number of state files to keep per pipeline (0 = keep all) |
 | `PIPEHUB_URL` | `https://hub.getpipe.dev` | Hub API base URL |
+| `PIPE_EXPERIMENTAL_UNSAFE_VARS` | unset | Disable the vars contract — allow override sources to introduce keys not declared in `vars` (see [Variables](/guides/variables/)) |
 
 ## Step output variables
 
@@ -41,7 +42,7 @@ PIPE_<STEP_ID>_<SUBRUN_ID>
 
 ## User-defined variables
 
-Variables declared in the `vars` section (or passed via CLI) are exposed as:
+Variables declared in the `vars` section are exposed as:
 
 ```
 PIPE_VAR_<KEY>
@@ -53,6 +54,20 @@ PIPE_VAR_<KEY>
 | `registry` | `PIPE_VAR_REGISTRY` |
 | `deploy-target` | `PIPE_VAR_DEPLOY_TARGET` |
 
+Only keys declared in the `vars` block are accepted. Override sources that provide keys not declared in `vars` are ignored with a warning. See [Variables & Templating](/guides/variables/) for the full contract.
+
+### Loading variables from a .env file
+
+When a pipeline specifies `dot_file`, variables are loaded from the given `.env` file. Keys use plain `NAME=value` format and are matched against the `vars` block:
+
+```
+# .env
+registry=docker.io/myorg
+env=production
+```
+
+`.env` file values override YAML defaults but are overridden by `PIPE_VAR_*` environment variables and CLI arguments. Keys not declared in `vars` are ignored with a warning.
+
 ### Overriding variables via environment
 
 You can override a pipeline's declared variable by setting the corresponding `PIPE_VAR_*` environment variable before running:
@@ -62,4 +77,6 @@ export PIPE_VAR_REGISTRY=ghcr.io/myorg
 pipe deploy
 ```
 
-This takes precedence over the YAML default but is overridden by CLI arguments. See [Variables & Templating](/guides/variables/) for the full precedence chain.
+This takes precedence over the YAML default and `.env` file values, but is overridden by CLI arguments. `PIPE_VAR_*` variables that don't match any declared var generate a warning.
+
+See [Variables & Templating](/guides/variables/) for the full precedence chain.

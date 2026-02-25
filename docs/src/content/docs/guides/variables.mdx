@@ -21,15 +21,69 @@ steps:
 
 Each variable is exposed as `PIPE_VAR_<KEY>` with hyphens converted to underscores and the name uppercased.
 
+## The vars contract
+
+The `vars` block is the contract for what variables your pipeline accepts. All override sources — `.env` files, `PIPE_VAR_*` environment variables, and CLI `KEY=value` flags — can only override keys that are **declared in `vars`**.
+
+If an override source provides a key that is not declared in `vars`, the key is ignored and a warning is shown:
+
+```
+WARN "SECRET_KEY" from dot_file has no effect — not declared in vars
+WARN "PIPE_VAR_NONAME" is set but has no effect on this pipeline
+WARN "custom_flag" passed via CLI has no effect — not declared in vars
+```
+
+This ensures pipelines are explicit about which variables they use. Warnings appear during both `pipe run` and `pipe lint`.
+
+### Bypassing the contract
+
+Set `PIPE_EXPERIMENTAL_UNSAFE_VARS` to disable the vars contract. This allows override sources to introduce new keys not declared in `vars`, and suppresses all related warnings:
+
+```bash
+PIPE_EXPERIMENTAL_UNSAFE_VARS=1 pipe deploy custom_flag=true
+```
+
+This is experimental and unsafe — pipelines lose the guarantee that only expected variables are injected.
+
+## Loading variables from a .env file
+
+Add a `dot_file` field to your pipeline to load variables from a standard `.env` file:
+
+```yaml
+name: deploy
+dot_file: ".env"
+vars:
+  registry: "ghcr.io/myorg"
+  env: "staging"
+steps:
+  - id: push
+    run: "docker push $PIPE_VAR_REGISTRY/app:latest"
+```
+
+The `.env` file uses plain `NAME=value` format (no `PIPE_VAR_` prefix needed):
+
+```bash
+# .env
+registry=docker.io/myorg
+env=production
+```
+
+Each key is matched against the `vars` block and automatically mapped to `PIPE_VAR_<KEY>`. Keys not declared in `vars` are ignored with a warning.
+
+If the `.env` file is missing, the pipeline continues silently — use a full path or run `pipe` from the directory containing the file. Malformed lines (e.g., missing `=`) are skipped with a warning.
+
 ## Precedence
 
-Variables resolve from three sources with increasing priority:
+Variables resolve from four sources with increasing priority:
 
 | Priority | Source | Description |
 |----------|--------|-------------|
 | 1 (lowest) | YAML `vars` | Default values in the pipeline file |
-| 2 | System environment | `PIPE_VAR_*` env vars set before running |
-| 3 (highest) | CLI overrides | `KEY=value` arguments after the pipeline name |
+| 2 | `.env` file | Values from the `dot_file` path |
+| 3 | System environment | `PIPE_VAR_*` env vars set before running |
+| 4 (highest) | CLI overrides | `KEY=value` arguments after the pipeline name |
+
+Only keys declared in `vars` are accepted from any source.
 
 ```bash
 # Uses YAML default for "registry", overrides "env"
@@ -64,13 +118,3 @@ vars:
 2. If the value contains `{{`, it is parsed as a Go template.
 3. The template is executed with the system environment as a flat map (e.g., `.HOME`, `.USER`, `.PATH`).
 4. If parsing or execution fails, the original string is used as-is (graceful degradation).
-
-## Introducing new variables from the CLI
-
-CLI overrides can introduce variables not declared in `vars`:
-
-```bash
-pipe deploy custom_flag=true
-```
-
-This creates `PIPE_VAR_CUSTOM_FLAG=true` in the environment even though `custom_flag` is not in the YAML.

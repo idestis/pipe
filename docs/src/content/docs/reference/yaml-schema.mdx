@@ -9,6 +9,7 @@ description: Complete field reference for pipeline YAML files.
 |-------|------|----------|-------------|
 | `name` | `string` | yes | Pipeline name — used as the run command |
 | `description` | `string` | no | Short description shown by `pipe list` |
+| `dot_file` | `string` | no | Path to a `.env` file to load variables from (see [Variables](/guides/variables/)) |
 | `vars` | `map[string]string` | no | User-defined variables (see [Variables](/guides/variables/)) |
 | `steps` | `[]Step` | yes | Ordered list of steps |
 
