@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/getpipe-dev/pipe/compare/v2.3.1...v2.4.0) (2026-02-25)
+
+
+### Features
+
+* **vars:** add dot_file support and strict vars contract ([29dac75](https://github.com/getpipe-dev/pipe/commit/29dac7512a686a3e34d59377a633d83c9ee46d3a))
+
 ## [2.3.1](https://github.com/getpipe-dev/pipe/compare/v2.3.0...v2.3.1) (2026-02-25)
 
 
