@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/getpipe-dev/pipe/internal/config"
@@ -19,6 +20,9 @@ type Credentials struct {
 func SaveCredentials(creds *Credentials) error {
 	data, err := json.MarshalIndent(creds, "", "  ")
 	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(config.CredentialsPath), 0o755); err != nil {
 		return err
 	}
 	return os.WriteFile(config.CredentialsPath, data, 0o600)
