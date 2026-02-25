@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/getpipe-dev/pipe/compare/v2.3.0...v2.3.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* **auth:** ensure ~/.pipe/ directory exists before saving credentials ([3ead155](https://github.com/getpipe-dev/pipe/commit/3ead155fa2942b060a995f108b3efcc68153354b))
+
 ## [2.3.0](https://github.com/getpipe-dev/pipe/compare/v2.2.0...v2.3.0) (2026-02-22)
 
 
