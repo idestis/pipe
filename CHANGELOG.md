@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.5.0](https://github.com/getpipe-dev/pipe/compare/v2.4.0...v2.5.0) (2026-02-26)
+
+
+### Features
+
+* add interactive step support ([eeca93b](https://github.com/getpipe-dev/pipe/commit/eeca93b830b93b037fdff4e609d0817fba956106))
+* colorize verbose mode output ([0a9f65e](https://github.com/getpipe-dev/pipe/commit/0a9f65ea5d6affb82d7cfc428a4c54f2f042d228))
+* interactive step in-place status line swap and output cleanup ([c88ff9e](https://github.com/getpipe-dev/pipe/commit/c88ff9e9a16d3aa7ad5ca2e72fc26ee3069b1399))
+* show captured stderr on step failure in compact mode ([1d913f7](https://github.com/getpipe-dev/pipe/commit/1d913f7b2d3236eb0fac8530410c9146e8574f34))
+* show failed steps summary in verbose mode ([3fdcf88](https://github.com/getpipe-dev/pipe/commit/3fdcf887567fc1d0e968d4c17b40eea263d13568))
+
 ## [2.4.0](https://github.com/getpipe-dev/pipe/compare/v2.3.1...v2.4.0) (2026-02-25)
 
 
