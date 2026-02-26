@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/getpipe-dev/pipe/internal/cache"
 	"github.com/getpipe-dev/pipe/internal/graph"
 	"github.com/getpipe-dev/pipe/internal/logging"
@@ -248,6 +249,7 @@ func (r *Runner) Run() error {
 	sem := make(chan struct{}, maxParallel)
 	completed := 0
 	failed := make(map[string]bool)
+	var failedSteps []string
 	var firstErr error
 
 	// Seed ready steps (in-degree == 0)
@@ -268,6 +270,7 @@ func (r *Runner) Run() error {
 
 		if res.Err != nil {
 			failed[res.ID] = true
+			failedSteps = append(failedSteps, res.ID)
 			if firstErr == nil {
 				firstErr = res.Err
 			}
@@ -296,7 +299,9 @@ func (r *Runner) Run() error {
 		r.saveState()
 		r.stateMu.Unlock()
 
-		r.log.Log("pipeline failed: %v", firstErr)
+		if r.ui == nil {
+			log.Error(fmt.Sprintf("pipeline %q failed steps: %s", r.pipeline.Name, strings.Join(failedSteps, ", ")))
+		}
 		if r.ui != nil {
 			r.ui.Finish()
 		}
@@ -304,10 +309,7 @@ func (r *Runner) Run() error {
 			"\n\033[2mPipeline failed. Resume with:\n  pipe %s --resume %s\033[0m\n\n",
 			r.pipeline.Name, r.state.RunID,
 		)
-		if r.ui != nil {
-			return ErrPipelineFailed
-		}
-		return firstErr
+		return ErrPipelineFailed
 	}
 
 	// All non-interactive steps succeeded — tear down UI and run interactive step
