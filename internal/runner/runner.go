@@ -99,6 +99,27 @@ func (r *Runner) outputEmitter(stepID string) (emit func(string), flush func()) 
 	}
 }
 
+// stderrWriter returns a writer that sends stderr to the log file. When buf is
+// non-nil, it also tees stderr into the buffer for later display on failure.
+func stderrWriter(sl *logging.StepLogger, buf *bytes.Buffer) io.Writer {
+	if buf == nil {
+		return sl.Writer()
+	}
+	return io.MultiWriter(sl.Writer(), buf)
+}
+
+// emitStderrOnError sends captured stderr lines to the compact UI so they
+// render under the failed step with the red pipe prefix. Must be called
+// *before* uiStatus(stepID, ui.Failed) because SetStatus(Failed) flushes output.
+func (r *Runner) emitStderrOnError(stepID string, buf *bytes.Buffer) {
+	if r.ui == nil || buf == nil || buf.Len() == 0 {
+		return
+	}
+	for _, line := range strings.Split(strings.TrimRight(buf.String(), "\n"), "\n") {
+		r.ui.AddOutput(stepID, line)
+	}
+}
+
 func (r *Runner) uiStatus(id string, s ui.Status) {
 	if r.ui != nil {
 		r.ui.SetStatus(id, s)
@@ -612,9 +633,17 @@ func (r *Runner) runSingle(step model.Step, sl *logging.StepLogger) error {
 	maxAttempts := step.Retry + 1
 	var output string
 
+	var stderrBuf *bytes.Buffer
+	if r.ui != nil && !step.Sensitive {
+		stderrBuf = new(bytes.Buffer)
+	}
+
 	attempts, err := Retry(maxAttempts, func() error {
+		if stderrBuf != nil {
+			stderrBuf.Reset()
+		}
 		var execErr error
-		output, execErr = r.execCapture(step.Run.Single, sl, show, step.ID)
+		output, execErr = r.execCapture(step.Run.Single, sl, show, step.ID, stderrBuf)
 		return execErr
 	})
 
@@ -628,6 +657,7 @@ func (r *Runner) runSingle(step model.Step, sl *logging.StepLogger) error {
 		ss.ExitCode = code
 		r.setStepState(step.ID, ss)
 		sl.Exit(code)
+		r.emitStderrOnError(step.ID, stderrBuf)
 		r.uiStatus(step.ID, ui.Failed)
 		return fmt.Errorf("step %q failed: %w", step.ID, err)
 	}
@@ -679,10 +709,17 @@ func (r *Runner) runParallelStrings(step model.Step, sl *logging.StepLogger) err
 			rowID := fmt.Sprintf("%s/run_%d", step.ID, idx)
 			r.uiStatus(rowID, ui.Running)
 			sl.Log("parallel: %s", c)
-			if err := r.execNoCapture(c, sl, show, rowID); err != nil {
+
+			var stderrBuf *bytes.Buffer
+			if r.ui != nil && !step.Sensitive {
+				stderrBuf = new(bytes.Buffer)
+			}
+
+			if err := r.execNoCapture(c, sl, show, rowID, stderrBuf); err != nil {
 				mu.Lock()
 				errs = append(errs, fmt.Sprintf("%s: %v", c, err))
 				mu.Unlock()
+				r.emitStderrOnError(rowID, stderrBuf)
 				r.uiStatus(rowID, ui.Failed)
 			} else {
 				r.uiStatus(rowID, ui.Done)
@@ -749,8 +786,13 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 			}
 			subSl.Log("%s", sr.Run)
 
+			var stderrBuf *bytes.Buffer
+			if r.ui != nil && !sr.Sensitive {
+				stderrBuf = new(bytes.Buffer)
+			}
+
 			show := shouldShowOutput(step, sr.Sensitive, r.verbosity)
-			output, err := r.execCapture(sr.Run, subSl, show, rowID)
+			output, err := r.execCapture(sr.Run, subSl, show, rowID, stderrBuf)
 
 			mu.Lock()
 			defer mu.Unlock()
@@ -765,6 +807,7 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 				ss.SubSteps[sr.ID] = subState
 				errs = append(errs, fmt.Sprintf("%s: %v", sr.ID, err))
 				subSl.Exit(code)
+				r.emitStderrOnError(rowID, stderrBuf)
 				r.uiStatus(rowID, ui.Failed)
 			} else {
 				subState.Status = "done"
@@ -816,7 +859,7 @@ func (r *Runner) runParallelSubRuns(step model.Step, _ *logging.StepLogger) erro
 	return nil
 }
 
-func (r *Runner) execCapture(cmdStr string, sl *logging.StepLogger, showOutput bool, stepID string) (string, error) {
+func (r *Runner) execCapture(cmdStr string, sl *logging.StepLogger, showOutput bool, stepID string, stderrBuf *bytes.Buffer) (string, error) {
 	cmd := exec.Command("sh", "-c", cmdStr)
 	cmd.Env = r.buildEnv()
 	var stdout bytes.Buffer
@@ -825,7 +868,7 @@ func (r *Runner) execCapture(cmdStr string, sl *logging.StepLogger, showOutput b
 		emit, flushOutput := r.outputEmitter(stepID)
 		ow := newOutputWriter(emit)
 		cmd.Stdout = io.MultiWriter(&stdout, ow)
-		cmd.Stderr = sl.Writer()
+		cmd.Stderr = stderrWriter(sl, stderrBuf)
 		err := cmd.Run()
 		ow.Flush()
 		flushOutput()
@@ -833,12 +876,12 @@ func (r *Runner) execCapture(cmdStr string, sl *logging.StepLogger, showOutput b
 	}
 
 	cmd.Stdout = &stdout
-	cmd.Stderr = sl.Writer()
+	cmd.Stderr = stderrWriter(sl, stderrBuf)
 	err := cmd.Run()
 	return stdout.String(), err
 }
 
-func (r *Runner) execNoCapture(cmdStr string, sl *logging.StepLogger, showOutput bool, stepID string) error {
+func (r *Runner) execNoCapture(cmdStr string, sl *logging.StepLogger, showOutput bool, stepID string, stderrBuf *bytes.Buffer) error {
 	cmd := exec.Command("sh", "-c", cmdStr)
 	cmd.Env = r.buildEnv()
 
@@ -846,7 +889,7 @@ func (r *Runner) execNoCapture(cmdStr string, sl *logging.StepLogger, showOutput
 		emit, flushOutput := r.outputEmitter(stepID)
 		ow := newOutputWriter(emit)
 		cmd.Stdout = io.MultiWriter(sl.Writer(), ow)
-		cmd.Stderr = sl.Writer()
+		cmd.Stderr = stderrWriter(sl, stderrBuf)
 		err := cmd.Run()
 		ow.Flush()
 		flushOutput()
@@ -854,7 +897,7 @@ func (r *Runner) execNoCapture(cmdStr string, sl *logging.StepLogger, showOutput
 	}
 
 	cmd.Stdout = sl.Writer()
-	cmd.Stderr = sl.Writer()
+	cmd.Stderr = stderrWriter(sl, stderrBuf)
 	return cmd.Run()
 }
 
