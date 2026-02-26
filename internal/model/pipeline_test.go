@@ -407,6 +407,29 @@ steps:
 	}
 }
 
+func TestStep_InteractiveField(t *testing.T) {
+	input := `
+name: test
+steps:
+  - id: setup
+    run: "echo setup"
+  - id: shell
+    run: "bash"
+    depends_on: setup
+    interactive: true
+`
+	var p Pipeline
+	if err := yaml.Unmarshal([]byte(input), &p); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.Steps[0].Interactive {
+		t.Fatal("step 0: expected interactive=false (default)")
+	}
+	if !p.Steps[1].Interactive {
+		t.Fatal("step 1: expected interactive=true")
+	}
+}
+
 // contains is a tiny helper to avoid importing strings in tests.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchString(s, substr)

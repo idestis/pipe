@@ -6,10 +6,12 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/getpipe-dev/pipe/internal/cache"
@@ -170,6 +172,16 @@ type stepResult struct {
 	Err error
 }
 
+// InteractiveStep returns the interactive step if one exists, or nil.
+func InteractiveStep(p *model.Pipeline) *model.Step {
+	for i := range p.Steps {
+		if p.Steps[i].Interactive {
+			return &p.Steps[i]
+		}
+	}
+	return nil
+}
+
 func (r *Runner) Run() error {
 	g, err := graph.Build(r.pipeline.Steps)
 	if err != nil {
@@ -183,19 +195,29 @@ func (r *Runner) Run() error {
 		}
 	}
 
+	// Identify the interactive step (if any) and exclude it from the DAG dispatch
+	iStep := InteractiveStep(r.pipeline)
+	var interactiveID string
+	if iStep != nil {
+		interactiveID = iStep.ID
+	}
+
 	// Build step lookup
 	stepByID := make(map[string]model.Step)
 	for _, s := range r.pipeline.Steps {
 		stepByID[s.ID] = s
 	}
 
-	// Working copy of in-degree
+	// Working copy of in-degree (excluding interactive step)
 	inDeg := make(map[string]int)
 	for id, d := range g.InDegree {
+		if id == interactiveID {
+			continue
+		}
 		inDeg[id] = d
 	}
 
-	total := len(g.Order)
+	total := len(inDeg)
 	results := make(chan stepResult, total)
 	sem := make(chan struct{}, maxParallel)
 	completed := 0
@@ -204,6 +226,9 @@ func (r *Runner) Run() error {
 
 	// Seed ready steps (in-degree == 0)
 	for _, id := range g.Order {
+		if id == interactiveID {
+			continue
+		}
 		if inDeg[id] == 0 {
 			step := stepByID[id]
 			go r.workerRun(step, sem, results)
@@ -220,12 +245,12 @@ func (r *Runner) Run() error {
 			if firstErr == nil {
 				firstErr = res.Err
 			}
-			// Cascade-fail all transitive dependents
-			r.cascadeFail(res.ID, g, failed, &completed)
+			// Cascade-fail all transitive dependents (excluding interactive)
+			r.cascadeFail(res.ID, g, failed, &completed, interactiveID)
 		} else {
 			// Decrement in-degree of dependents, enqueue newly-ready
 			for _, dep := range g.Dependents[res.ID] {
-				if failed[dep] {
+				if dep == interactiveID || failed[dep] {
 					continue
 				}
 				inDeg[dep]--
@@ -256,6 +281,22 @@ func (r *Runner) Run() error {
 		return firstErr
 	}
 
+	// All non-interactive steps succeeded — tear down UI and run interactive step
+	if iStep != nil {
+		if r.ui != nil {
+			r.ui.Finish()
+		}
+		if err := r.runInteractive(*iStep); err != nil {
+			r.stateMu.Lock()
+			r.state.Status = "failed"
+			now := time.Now()
+			r.state.FinishedAt = &now
+			r.saveState()
+			r.stateMu.Unlock()
+			return err
+		}
+	}
+
 	r.stateMu.Lock()
 	r.state.Status = "done"
 	now := time.Now()
@@ -264,21 +305,94 @@ func (r *Runner) Run() error {
 	r.stateMu.Unlock()
 
 	r.log.Log("pipeline %q completed (run %s)", r.pipeline.Name, r.state.RunID)
-	if r.ui != nil {
+	if r.ui != nil && iStep == nil {
 		r.ui.Finish()
 	}
 	return nil
 }
 
+// runInteractive runs a step with stdin/stdout/stderr attached to the terminal.
+func (r *Runner) runInteractive(step model.Step) error {
+	ss := r.getStepState(step.ID)
+
+	// Resume: skip if already done
+	if ss.Status == "done" {
+		r.log.Log("[%s] skipping interactive (already done)", step.ID)
+		return nil
+	}
+
+	r.log.Log("[%s] starting interactive", step.ID)
+	ss.Status = "running"
+	r.setStepState(step.ID, ss)
+
+	// Show a status line before handing over the terminal
+	fmt.Fprintf(os.Stderr, "\033[33m●\033[0m %s  \033[33mexecuting...\033[0m\n", step.ID)
+	startedAt := time.Now()
+
+	cmd := exec.Command("sh", "-c", step.Run.Single)
+	cmd.Env = r.buildEnv()
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		ss.Status = "failed"
+		ss.ExitCode = 1
+		now := time.Now()
+		ss.At = &now
+		r.setStepState(step.ID, ss)
+		dur := ui.FormatDuration(time.Since(startedAt))
+		fmt.Fprintf(os.Stderr, "\033[31m✗\033[0m %s  \033[31m%s\033[0m\n", step.ID, dur)
+		return fmt.Errorf("step %q: %w", step.ID, err)
+	}
+
+	// Forward SIGINT/SIGTERM to the child process
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan struct{})
+	go func() {
+		select {
+		case sig := <-sigCh:
+			_ = cmd.Process.Signal(sig)
+		case <-done:
+		}
+		signal.Stop(sigCh)
+	}()
+
+	err := cmd.Wait()
+	close(done)
+
+	now := time.Now()
+	ss.At = &now
+	dur := ui.FormatDuration(time.Since(startedAt))
+
+	if err != nil {
+		code := exitCode(err)
+		ss.Status = "failed"
+		ss.ExitCode = code
+		r.setStepState(step.ID, ss)
+		fmt.Fprintf(os.Stderr, "\033[31m✗\033[0m %s  \033[31m%s\033[0m\n", step.ID, dur)
+		return fmt.Errorf("step %q failed: %w", step.ID, err)
+	}
+
+	ss.Status = "done"
+	ss.ExitCode = 0
+	r.setStepState(step.ID, ss)
+	fmt.Fprintf(os.Stderr, "\033[32m✓\033[0m %s  \033[2m%s\033[0m\n", step.ID, dur)
+	return nil
+}
+
 // cascadeFail marks all transitive dependents of a failed step as failed.
-func (r *Runner) cascadeFail(failedID string, g *graph.Graph, failedSet map[string]bool, completed *int) {
+// When excludeID is non-empty, that step is skipped (used to exclude the
+// interactive step from the dispatch-loop cascade counting).
+func (r *Runner) cascadeFail(failedID string, g *graph.Graph, failedSet map[string]bool, completed *int, excludeID string) {
 	// BFS through dependents
 	queue := []string{failedID}
 	for len(queue) > 0 {
 		curr := queue[0]
 		queue = queue[1:]
 		for _, dep := range g.Dependents[curr] {
-			if failedSet[dep] {
+			if dep == excludeID || failedSet[dep] {
 				continue
 			}
 			failedSet[dep] = true

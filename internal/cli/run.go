@@ -102,6 +102,11 @@ func runPipeline(name string, overrides map[string]string) error {
 	}
 	log.Debug("parsed pipeline", "name", pipeline.Name, "steps", len(pipeline.Steps), "vars", len(pipeline.Vars))
 
+	// Interactive step requires a TTY
+	if runner.InteractiveStep(pipeline) != nil && !ui.IsTTY(os.Stdin) {
+		return fmt.Errorf("pipeline %q has an interactive step — stdin must be a terminal (not a pipe or redirect)", pipeline.Name)
+	}
+
 	for _, w := range parser.Warnings(pipeline) {
 		log.Warn(w)
 	}

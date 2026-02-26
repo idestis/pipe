@@ -23,6 +23,7 @@ description: Complete field reference for pipeline YAML files.
 | `sensitive` | `bool` | no | `false` | Exclude output from state files; always re-execute on resume |
 | `retry` | `int` | no | `0` | Number of retries on failure |
 | `cache` | `bool \| CacheConfig` | no | `false` | Cache successful results (see [Caching](/guides/caching/)) |
+| `interactive` | `bool` | no | `false` | Attach stdin/stdout/stderr to the terminal (see below) |
 
 ## SubRun fields
 
@@ -82,6 +83,36 @@ run:
     run: "GOOS=linux go build -o dist/linux ."
   - id: darwin
     run: "GOOS=darwin go build -o dist/darwin ."
+```
+
+## Interactive steps
+
+Setting `interactive: true` on a step connects stdin, stdout, and stderr directly
+to the terminal instead of capturing output. This is useful for steps that start a
+user-facing session such as SSH, a REPL, or a shell.
+
+**Constraints:**
+- At most **one** interactive step per pipeline.
+- Must use a **single** `run` command (not parallel strings or sub-runs).
+- Must be a **leaf node** — no other step can depend on it.
+- `cache`, `output`, `retry`, and `sensitive` are ignored on interactive steps.
+
+The interactive step is excluded from the parallel DAG dispatch. After all
+non-interactive steps complete successfully, the compact UI is torn down and the
+interactive step runs synchronously with the terminal attached. If prior steps
+fail, the interactive step is skipped (and can be resumed later).
+
+Stdin must be a TTY — piping into a pipeline that has an interactive step will
+fail with a clear error.
+
+```yaml
+steps:
+  - id: push-key
+    run: "aws ec2-instance-connect send-ssh-public-key ..."
+  - id: connect
+    run: "ssh ec2-user@$PIPE_VAR_HOST"
+    depends_on: push-key
+    interactive: true
 ```
 
 ## Full example

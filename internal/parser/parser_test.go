@@ -624,6 +624,190 @@ steps:
 	}
 }
 
+// --- interactive step validation tests ---
+
+func TestValidate_InteractiveMultiple(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "multi-interactive", `
+name: multi-interactive
+steps:
+  - id: a
+    run: "bash"
+    interactive: true
+  - id: b
+    run: "sh"
+    interactive: true
+`)
+	_, err := LoadPipeline("multi-interactive")
+	if err == nil {
+		t.Fatal("expected error for multiple interactive steps")
+	}
+	if !strings.Contains(err.Error(), "only one interactive step") {
+		t.Fatalf("expected error about one interactive step, got %q", err.Error())
+	}
+}
+
+func TestValidate_InteractiveNonSingle(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-parallel", `
+name: interactive-parallel
+steps:
+  - id: a
+    run: ["cmd1", "cmd2"]
+    interactive: true
+`)
+	_, err := LoadPipeline("interactive-parallel")
+	if err == nil {
+		t.Fatal("expected error for interactive parallel step")
+	}
+	if !strings.Contains(err.Error(), "single run command") {
+		t.Fatalf("expected error about single run command, got %q", err.Error())
+	}
+}
+
+func TestValidate_InteractiveNonLeaf(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-nonleaf", `
+name: interactive-nonleaf
+steps:
+  - id: shell
+    run: "bash"
+    interactive: true
+  - id: after
+    run: "echo done"
+    depends_on: shell
+`)
+	_, err := LoadPipeline("interactive-nonleaf")
+	if err == nil {
+		t.Fatal("expected error for non-leaf interactive step")
+	}
+	if !strings.Contains(err.Error(), "leaf node") {
+		t.Fatalf("expected error about leaf node, got %q", err.Error())
+	}
+}
+
+func TestValidate_InteractiveValid(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-ok", `
+name: interactive-ok
+steps:
+  - id: setup
+    run: "echo setup"
+  - id: shell
+    run: "bash"
+    depends_on: setup
+    interactive: true
+`)
+	_, err := LoadPipeline("interactive-ok")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestWarnings_InteractiveCache(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-cache", `
+name: interactive-cache
+steps:
+  - id: shell
+    run: "bash"
+    interactive: true
+    cache: true
+`)
+	p, err := LoadPipeline("interactive-cache")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	warns := Warnings(p)
+	found := false
+	for _, w := range warns {
+		if strings.Contains(w, "interactive + cache") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected warning about interactive + cache, got: %v", warns)
+	}
+}
+
+func TestWarnings_InteractiveOutput(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-output", `
+name: interactive-output
+steps:
+  - id: shell
+    run: "bash"
+    interactive: true
+    output: true
+`)
+	p, err := LoadPipeline("interactive-output")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	warns := Warnings(p)
+	found := false
+	for _, w := range warns {
+		if strings.Contains(w, "interactive + output") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected warning about interactive + output, got: %v", warns)
+	}
+}
+
+func TestWarnings_InteractiveSensitive(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-sensitive", `
+name: interactive-sensitive
+steps:
+  - id: shell
+    run: "bash"
+    interactive: true
+    sensitive: true
+`)
+	p, err := LoadPipeline("interactive-sensitive")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	warns := Warnings(p)
+	found := false
+	for _, w := range warns {
+		if strings.Contains(w, "interactive + sensitive") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected warning about interactive + sensitive, got: %v", warns)
+	}
+}
+
+func TestWarnings_InteractiveRetry(t *testing.T) {
+	dir := overrideFilesDir(t)
+	writeYAML(t, dir, "interactive-retry", `
+name: interactive-retry
+steps:
+  - id: shell
+    run: "bash"
+    interactive: true
+    retry: 2
+`)
+	p, err := LoadPipeline("interactive-retry")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	warns := Warnings(p)
+	found := false
+	for _, w := range warns {
+		if strings.Contains(w, "interactive + retry") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected warning about interactive + retry, got: %v", warns)
+	}
+}
+
 func TestValidatePipeline_Invalid(t *testing.T) {
 	dir := overrideFilesDir(t)
 	writeYAML(t, dir, "bad", `

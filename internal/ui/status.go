@@ -65,6 +65,9 @@ func NewStatusUI(w io.Writer, steps []model.Step) *StatusUI {
 	}
 
 	for _, step := range steps {
+		if step.Interactive {
+			continue
+		}
 		switch {
 		case step.Run.IsStrings():
 			for i := range step.Run.Strings {
@@ -246,16 +249,16 @@ func statusSuffix(r row) string {
 	case Running:
 		return colorYellow + "running..." + colorReset
 	case Done:
-		return colorDim + formatDuration(r.duration) + colorReset
+		return colorDim + FormatDuration(r.duration) + colorReset
 	case Failed:
-		return colorRed + formatDuration(r.duration) + colorReset
+		return colorRed + FormatDuration(r.duration) + colorReset
 	default:
 		return ""
 	}
 }
 
-// formatDuration returns a human-friendly duration string.
-func formatDuration(d time.Duration) string {
+// FormatDuration returns a human-friendly duration string.
+func FormatDuration(d time.Duration) string {
 	secs := d.Seconds()
 	if secs < 60 {
 		return fmt.Sprintf("(%.1fs)", secs)

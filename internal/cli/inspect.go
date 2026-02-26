@@ -62,11 +62,15 @@ var inspectCmd = &cobra.Command{
 		// Build graph for dependency info
 		g, _ := graph.Build(pipeline.Steps)
 		for _, step := range pipeline.Steps {
+			tags := ""
+			if step.Interactive {
+				tags = " [interactive]"
+			}
 			deps := ""
 			if g != nil && len(g.Deps[step.ID]) > 0 {
 				deps = fmt.Sprintf("  (depends on: %s)", strings.Join(g.Deps[step.ID], ", "))
 			}
-			fmt.Printf("  - %s%s\n", step.ID, deps)
+			fmt.Printf("  - %s%s%s\n", step.ID, tags, deps)
 		}
 
 		fmt.Printf("Vars:        %d\n", len(pipeline.Vars))

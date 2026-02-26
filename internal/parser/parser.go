@@ -80,6 +80,36 @@ func Validate(p *model.Pipeline) error {
 		}
 	}
 
+	// Interactive step constraints
+	var interactiveCount int
+	for _, s := range p.Steps {
+		if !s.Interactive {
+			continue
+		}
+		interactiveCount++
+		if interactiveCount > 1 {
+			return fmt.Errorf("only one interactive step is allowed per pipeline")
+		}
+		if !s.Run.IsSingle() {
+			return fmt.Errorf("step %q: interactive steps must use a single run command", s.ID)
+		}
+	}
+
+	// Interactive step must be a leaf (no other step depends on it)
+	if interactiveCount == 1 {
+		depended := make(map[string]bool)
+		for _, s := range p.Steps {
+			for _, d := range s.DependsOn.Steps {
+				depended[d] = true
+			}
+		}
+		for _, s := range p.Steps {
+			if s.Interactive && depended[s.ID] {
+				return fmt.Errorf("step %q: interactive step must be a leaf node (no steps can depend on it)", s.ID)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -127,6 +157,37 @@ func Warnings(p *model.Pipeline) []string {
 					s.ID, varName, srcID,
 				))
 			}
+		}
+	}
+
+	// Interactive step warnings
+	for _, s := range p.Steps {
+		if !s.Interactive {
+			continue
+		}
+		if s.Cached.Enabled {
+			warns = append(warns, fmt.Sprintf(
+				"step %q: interactive + cache — cache is ignored for interactive steps",
+				s.ID,
+			))
+		}
+		if s.Output {
+			warns = append(warns, fmt.Sprintf(
+				"step %q: interactive + output — output flag is ignored (terminal is attached directly)",
+				s.ID,
+			))
+		}
+		if s.Sensitive {
+			warns = append(warns, fmt.Sprintf(
+				"step %q: interactive + sensitive — sensitive is contradictory (user sees all terminal output)",
+				s.ID,
+			))
+		}
+		if s.Retry > 0 {
+			warns = append(warns, fmt.Sprintf(
+				"step %q: interactive + retry — retry is ignored for interactive steps",
+				s.ID,
+			))
 		}
 	}
 

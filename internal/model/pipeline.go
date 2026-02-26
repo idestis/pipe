@@ -15,13 +15,14 @@ type Pipeline struct {
 }
 
 type Step struct {
-	ID        string         `yaml:"id"`
-	Run       RunField       `yaml:"run"`
-	DependsOn DependsOnField `yaml:"depends_on"`
-	Sensitive bool           `yaml:"sensitive"`
-	Output    bool           `yaml:"output"`
-	Retry     int            `yaml:"retry"`
-	Cached    CacheField     `yaml:"cache"`
+	ID          string         `yaml:"id"`
+	Run         RunField       `yaml:"run"`
+	DependsOn   DependsOnField `yaml:"depends_on"`
+	Sensitive   bool           `yaml:"sensitive"`
+	Output      bool           `yaml:"output"`
+	Retry       int            `yaml:"retry"`
+	Cached      CacheField     `yaml:"cache"`
+	Interactive bool           `yaml:"interactive"`
 }
 
 // DependsOnField supports both scalar and sequence YAML forms:
