@@ -22,6 +22,11 @@ import (
 	"github.com/getpipe-dev/pipe/internal/ui"
 )
 
+// ErrPipelineFailed is returned when the pipeline fails in compact mode.
+// The UI already shows per-step failures, so callers can suppress the
+// redundant log line and simply exit with a non-zero code.
+var ErrPipelineFailed = fmt.Errorf("pipeline failed")
+
 type Runner struct {
 	pipeline  *model.Pipeline
 	state     *state.RunState
@@ -93,7 +98,7 @@ func (r *Runner) outputEmitter(stepID string) (emit func(string), flush func()) 
 		}
 		r.emitMu.Lock()
 		for _, line := range lines {
-			fmt.Fprintf(os.Stderr, "[%s] %s\n", stepID, line)
+			fmt.Fprintf(os.Stderr, "\033[36m[%s]\033[0m %s\n", stepID, line)
 		}
 		r.emitMu.Unlock()
 	}
@@ -299,6 +304,9 @@ func (r *Runner) Run() error {
 			"\n\033[2mPipeline failed. Resume with:\n  pipe %s --resume %s\033[0m\n\n",
 			r.pipeline.Name, r.state.RunID,
 		)
+		if r.ui != nil {
+			return ErrPipelineFailed
+		}
 		return firstErr
 	}
 

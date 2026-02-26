@@ -1,9 +1,12 @@
 package cli
 
 import (
+	"errors"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/getpipe-dev/pipe/internal/runner"
 	"github.com/spf13/cobra"
 )
 
@@ -40,8 +43,9 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	log.SetReportTimestamp(true)
-	log.SetTimeFormat("15:04:05 01/02/2006")
+	log.SetTimeFormat("[15:04:05 01/02/2006]")
 	styles := log.DefaultStyles()
+	styles.Timestamp = lipgloss.NewStyle().Faint(true)
 	styles.Levels[log.ErrorLevel] = styles.Levels[log.ErrorLevel].SetString("ERROR").MaxWidth(5)
 	log.SetStyles(styles)
 
@@ -107,7 +111,9 @@ func SetVersion(v string) {
 // Execute runs the root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Error(err)
+		if !errors.Is(err, runner.ErrPipelineFailed) {
+			log.Error(err)
+		}
 		os.Exit(1)
 	}
 }

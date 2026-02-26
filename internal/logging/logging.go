@@ -12,10 +12,23 @@ import (
 	"github.com/getpipe-dev/pipe/internal/config"
 )
 
-// Logger writes timestamped lines to stderr and a log file.
+// ANSI color codes used for verbose-mode terminal output.
+const (
+	ansiDim   = "\033[2m"
+	ansiCyan  = "\033[36m"
+	ansiGreen = "\033[32m"
+	ansiRed   = "\033[31m"
+	ansiReset = "\033[0m"
+
+	// ttyTimeFormat matches the charmbracelet/log format used for debug output.
+	ttyTimeFormat = "15:04:05 01/02/2006"
+)
+
+// Logger writes timestamped lines to a log file and optionally to the terminal.
 type Logger struct {
 	mu   sync.Mutex
-	w    io.Writer
+	w    io.Writer // file writer (always plain text)
+	tty  io.Writer // terminal writer (nil in file-only mode)
 	file *os.File
 }
 
@@ -50,22 +63,26 @@ func New(pipelineName, runID string, opts ...Option) (*Logger, error) {
 		return nil, fmt.Errorf("creating log file: %w", err)
 	}
 
-	w := io.Writer(f)
+	l := &Logger{
+		w:    f,
+		file: f,
+	}
 	if !cfg.fileOnly {
-		w = io.MultiWriter(os.Stderr, f)
+		l.tty = os.Stderr
 	}
 
-	return &Logger{
-		w:    w,
-		file: f,
-	}, nil
+	return l, nil
 }
 
 func (l *Logger) Log(format string, args ...any) {
-	ts := time.Now().UTC().Format(time.RFC3339)
+	now := time.Now()
 	msg := fmt.Sprintf(format, args...)
 	l.mu.Lock()
-	_, _ = fmt.Fprintf(l.w, "[%s] %s\n", ts, msg)
+	_, _ = fmt.Fprintf(l.w, "[%s] %s\n", now.UTC().Format(time.RFC3339), msg)
+	if l.tty != nil {
+		_, _ = fmt.Fprintf(l.tty, "%s[%s]%s %s\n",
+			ansiDim, now.Format(ttyTimeFormat), ansiReset, msg)
+	}
 	l.mu.Unlock()
 }
 
@@ -90,26 +107,42 @@ func (s *StepLogger) Log(format string, args ...any) {
 	if s.sensitive {
 		return
 	}
-	ts := time.Now().UTC().Format(time.RFC3339)
+	now := time.Now()
 	msg := fmt.Sprintf(format, args...)
 	s.l.mu.Lock()
-	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] %s\n", ts, s.id, msg)
+	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] %s\n", now.UTC().Format(time.RFC3339), s.id, msg)
+	if s.l.tty != nil {
+		_, _ = fmt.Fprintf(s.l.tty, "%s[%s]%s %s[%s]%s %s\n",
+			ansiDim, now.Format(ttyTimeFormat), ansiReset, ansiCyan, s.id, ansiReset, msg)
+	}
 	s.l.mu.Unlock()
 }
 
 // Redacted writes a "[SENSITIVE - output redacted]" line.
 func (s *StepLogger) Redacted() {
-	ts := time.Now().UTC().Format(time.RFC3339)
+	now := time.Now()
 	s.l.mu.Lock()
-	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] [SENSITIVE - output redacted]\n", ts, s.id)
+	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] [SENSITIVE - output redacted]\n", now.UTC().Format(time.RFC3339), s.id)
+	if s.l.tty != nil {
+		_, _ = fmt.Fprintf(s.l.tty, "%s[%s]%s %s[%s]%s %s[SENSITIVE - output redacted]%s\n",
+			ansiDim, now.Format(ttyTimeFormat), ansiReset, ansiCyan, s.id, ansiReset, ansiDim, ansiReset)
+	}
 	s.l.mu.Unlock()
 }
 
 // Exit writes an "exit N" line (always logged, even for sensitive steps).
 func (s *StepLogger) Exit(code int) {
-	ts := time.Now().UTC().Format(time.RFC3339)
+	now := time.Now()
 	s.l.mu.Lock()
-	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] exit %d\n", ts, s.id, code)
+	_, _ = fmt.Fprintf(s.l.w, "[%s] [%s] exit %d\n", now.UTC().Format(time.RFC3339), s.id, code)
+	if s.l.tty != nil {
+		exitColor := ansiGreen
+		if code != 0 {
+			exitColor = ansiRed
+		}
+		_, _ = fmt.Fprintf(s.l.tty, "%s[%s]%s %s[%s]%s %sexit %d%s\n",
+			ansiDim, now.Format(ttyTimeFormat), ansiReset, ansiCyan, s.id, ansiReset, exitColor, code, ansiReset)
+	}
 	s.l.mu.Unlock()
 }
 
