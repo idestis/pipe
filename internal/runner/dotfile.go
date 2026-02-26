@@ -17,7 +17,7 @@ func ParseDotFile(path string) (map[string]string, []string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	vars := make(map[string]string)
 	var warnings []string

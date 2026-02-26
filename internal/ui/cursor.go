@@ -16,14 +16,14 @@ func CursorRow() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("open /dev/tty: %w", err)
 	}
-	defer tty.Close()
+	defer tty.Close() //nolint:errcheck
 
 	fd := int(tty.Fd())
 	oldState, err := term.MakeRaw(fd)
 	if err != nil {
 		return 0, fmt.Errorf("set raw mode: %w", err)
 	}
-	defer term.Restore(fd, oldState)
+	defer term.Restore(fd, oldState) //nolint:errcheck
 
 	// Send DSR query: "\033[6n" → terminal responds "\033[<row>;<col>R"
 	if _, err := tty.WriteString("\033[6n"); err != nil {
@@ -36,7 +36,7 @@ func CursorRow() (int, error) {
 	deadline := time.Now().Add(500 * time.Millisecond)
 
 	for n < len(buf) && time.Now().Before(deadline) {
-		tty.SetReadDeadline(deadline)
+		_ = tty.SetReadDeadline(deadline)
 		nr, err := tty.Read(buf[n:])
 		if nr > 0 {
 			n += nr
@@ -65,7 +65,7 @@ func TermHeight() int {
 	if err != nil {
 		return 0
 	}
-	defer tty.Close()
+	defer tty.Close() //nolint:errcheck
 
 	_, h, err := term.GetSize(int(tty.Fd()))
 	if err != nil {

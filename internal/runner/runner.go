@@ -436,17 +436,17 @@ func printInteractiveResult(w io.Writer, id, dur string, success bool, startRow 
 		if termH == 0 || distance < termH {
 			if preserve {
 				// Overwrite status line in-place, keep session output below
-				fmt.Fprintf(w, "\033[%dA\033[2K%s\033[%dB\r", distance, line, distance)
+				_, _ = fmt.Fprintf(w, "\033[%dA\033[2K%s\033[%dB\r", distance, line, distance)
 			} else {
 				// Overwrite status line and clear all session output below
-				fmt.Fprintf(w, "\033[%dA\033[2K%s\033[J\n", distance, line)
+				_, _ = fmt.Fprintf(w, "\033[%dA\033[2K%s\033[J\n", distance, line)
 			}
 			return
 		}
 	}
 
 	// Fallback: print as a new line
-	fmt.Fprintf(w, "%s\n", line)
+	_, _ = fmt.Fprintf(w, "%s\n", line)
 }
 
 // cascadeFail marks all transitive dependents of a failed step as failed.
