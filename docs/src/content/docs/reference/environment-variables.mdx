@@ -12,6 +12,7 @@ description: Environment variables that configure Pipe behavior.
 | `PIPE_STATE_ROTATE` | `10` | Number of state files to keep per pipeline (0 = keep all) |
 | `PIPEHUB_URL` | `https://hub.getpipe.dev` | Hub API base URL |
 | `PIPE_EXPERIMENTAL_UNSAFE_VARS` | unset | Disable the vars contract — allow override sources to introduce keys not declared in `vars` (see [Variables](/guides/variables/)) |
+| `PIPE_EXPERIMENTAL_PRESERVE_INTERACTIVE_OUTPUT` | unset | Keep interactive step session output visible after the step finishes (by default, output is cleared and only the status line remains) |
 
 ## Step output variables
 

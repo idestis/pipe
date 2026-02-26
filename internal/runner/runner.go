@@ -325,8 +325,9 @@ func (r *Runner) runInteractive(step model.Step) error {
 	ss.Status = "running"
 	r.setStepState(step.ID, ss)
 
-	// Show a status line before handing over the terminal
-	fmt.Fprintf(os.Stderr, "\033[33m●\033[0m %s  \033[33mexecuting...\033[0m\n", step.ID)
+	// Query cursor position before printing the status line
+	startRow, startErr := ui.CursorRow()
+	fmt.Fprintf(os.Stderr, "\033[33m●\033[0m %s  \033[33minteractive...\033[0m\n", step.ID)
 	startedAt := time.Now()
 
 	cmd := exec.Command("sh", "-c", step.Run.Single)
@@ -342,7 +343,7 @@ func (r *Runner) runInteractive(step model.Step) error {
 		ss.At = &now
 		r.setStepState(step.ID, ss)
 		dur := ui.FormatDuration(time.Since(startedAt))
-		fmt.Fprintf(os.Stderr, "\033[31m✗\033[0m %s  \033[31m%s\033[0m\n", step.ID, dur)
+		printInteractiveResult(os.Stderr, step.ID, dur, false, startRow, startErr)
 		return fmt.Errorf("step %q: %w", step.ID, err)
 	}
 
@@ -371,15 +372,50 @@ func (r *Runner) runInteractive(step model.Step) error {
 		ss.Status = "failed"
 		ss.ExitCode = code
 		r.setStepState(step.ID, ss)
-		fmt.Fprintf(os.Stderr, "\033[31m✗\033[0m %s  \033[31m%s\033[0m\n", step.ID, dur)
+		printInteractiveResult(os.Stderr, step.ID, dur, false, startRow, startErr)
 		return fmt.Errorf("step %q failed: %w", step.ID, err)
 	}
 
 	ss.Status = "done"
 	ss.ExitCode = 0
 	r.setStepState(step.ID, ss)
-	fmt.Fprintf(os.Stderr, "\033[32m✓\033[0m %s  \033[2m%s\033[0m\n", step.ID, dur)
+	printInteractiveResult(os.Stderr, step.ID, dur, true, startRow, startErr)
 	return nil
+}
+
+// printInteractiveResult prints the completion line for an interactive step.
+// When possible, it overwrites the original "● <id>  interactive..." status line
+// in-place using ANSI cursor movement and clears the session output below.
+// Set PIPE_EXPERIMENTAL_PRESERVE_INTERACTIVE_OUTPUT to keep session output visible.
+// Falls back to a new line when the terminal doesn't support DSR or the original
+// line has scrolled off-screen.
+func printInteractiveResult(w io.Writer, id, dur string, success bool, startRow int, startErr error) {
+	icon, colorCode := "\033[32m✓\033[0m", "\033[2m"
+	if !success {
+		icon, colorCode = "\033[31m✗\033[0m", "\033[31m"
+	}
+	line := fmt.Sprintf("%s %s  %s%s\033[0m", icon, id, colorCode, dur)
+
+	endRow, endErr := ui.CursorRow()
+	distance := endRow - startRow
+	preserve := os.Getenv("PIPE_EXPERIMENTAL_PRESERVE_INTERACTIVE_OUTPUT") != ""
+
+	if startErr == nil && endErr == nil && distance > 0 {
+		termH := ui.TermHeight()
+		if termH == 0 || distance < termH {
+			if preserve {
+				// Overwrite status line in-place, keep session output below
+				fmt.Fprintf(w, "\033[%dA\033[2K%s\033[%dB\r", distance, line, distance)
+			} else {
+				// Overwrite status line and clear all session output below
+				fmt.Fprintf(w, "\033[%dA\033[2K%s\033[J\n", distance, line)
+			}
+			return
+		}
+	}
+
+	// Fallback: print as a new line
+	fmt.Fprintf(w, "%s\n", line)
 }
 
 // cascadeFail marks all transitive dependents of a failed step as failed.
