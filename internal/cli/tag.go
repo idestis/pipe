@@ -14,11 +14,13 @@ import (
 var (
 	tagDelete bool
 	tagForce  bool
+	tagYes    bool
 )
 
 func init() {
 	tagCmd.Flags().BoolVarP(&tagDelete, "delete", "d", false, "delete the specified tag")
 	tagCmd.Flags().BoolVarP(&tagForce, "force", "f", false, "overwrite an existing tag")
+	tagCmd.Flags().BoolVarP(&tagYes, "yes", "y", false, "skip confirmation prompt")
 }
 
 var tagCmd = &cobra.Command{
@@ -57,6 +59,9 @@ With -d, deletes the specified tag.`,
 
 		// -d flag → delete
 		if tagDelete {
+			if !confirmAction(tagYes, fmt.Sprintf("Delete tag %q from %s/%s?", tag, owner, name)) {
+				return nil
+			}
 			log.Debug("deleting tag", "tag", tag)
 			return deleteTag(owner, name, tag, idx)
 		}

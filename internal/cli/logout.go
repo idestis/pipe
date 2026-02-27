@@ -8,6 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var logoutYes bool
+
+func init() {
+	logoutCmd.Flags().BoolVarP(&logoutYes, "yes", "y", false, "skip confirmation prompt")
+}
+
 var logoutCmd = &cobra.Command{
 	Use:     "logout",
 	Short:   "Log out of Pipe Hub",
@@ -20,6 +26,10 @@ var logoutCmd = &cobra.Command{
 		}
 		if creds == nil {
 			log.Info("not logged in")
+			return nil
+		}
+
+		if !confirmAction(logoutYes, "Log out and revoke credentials?") {
 			return nil
 		}
 

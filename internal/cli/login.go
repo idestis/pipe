@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -26,10 +24,7 @@ var loginCmd = &cobra.Command{
 		if existing != nil {
 			log.Debug("existing credentials found", "username", existing.Username)
 			log.Warn("already logged in", "username", existing.Username)
-			fmt.Print("Re-authenticate? [y/N] ")
-			scanner := bufio.NewScanner(os.Stdin)
-			scanner.Scan()
-			if answer := scanner.Text(); answer != "y" && answer != "Y" {
+			if !confirmAction(false, "Re-authenticate?") {
 				return nil
 			}
 		}

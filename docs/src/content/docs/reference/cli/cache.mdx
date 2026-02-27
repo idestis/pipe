@@ -31,6 +31,12 @@ Shows all cache entries in a table:
 
 Without arguments, clears all cache entries. With a step ID, clears only that entry.
 
+#### Flags
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--yes` | `-y` | Skip confirmation prompt |
+
 ## Examples
 
 ```bash
@@ -42,6 +48,9 @@ pipe cache clear
 
 # Clear a specific step's cache
 pipe cache clear sso-login
+
+# Skip confirmation prompt
+pipe cache clear --yes
 ```
 
 ## See also

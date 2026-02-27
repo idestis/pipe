@@ -7,6 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var cacheClearYes bool
+
+func init() {
+	cacheClearCmd.Flags().BoolVarP(&cacheClearYes, "yes", "y", false, "skip confirmation prompt")
+}
+
 var cacheClearCmd = &cobra.Command{
 	Use:   "clear [step-id]",
 	Short: "Clear one or all cache entries",
@@ -14,6 +20,9 @@ var cacheClearCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 1 {
 			stepID := args[0]
+			if !confirmAction(cacheClearYes, fmt.Sprintf("Clear cache for %q?", stepID)) {
+				return nil
+			}
 			if err := cache.Clear(stepID); err != nil {
 				return err
 			}
@@ -21,6 +30,9 @@ var cacheClearCmd = &cobra.Command{
 			return nil
 		}
 
+		if !confirmAction(cacheClearYes, "Clear all cache entries?") {
+			return nil
+		}
 		if err := cache.ClearAll(); err != nil {
 			return err
 		}

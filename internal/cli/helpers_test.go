@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -82,6 +83,46 @@ func TestParseVarOverrides_InvalidKeyChars(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "invalid variable key") {
 		t.Fatalf("expected error containing %q, got %q", "invalid variable key", err.Error())
+	}
+}
+
+func TestConfirmAction_SkipTrue(t *testing.T) {
+	t.Parallel()
+	if !confirmAction(true, "Delete everything?") {
+		t.Fatal("expected true when skip=true")
+	}
+}
+
+func confirmWithStdin(t *testing.T, input string) bool {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
+	_, _ = w.WriteString(input)
+	w.Close()
+
+	old := os.Stdin
+	os.Stdin = r
+	defer func() { os.Stdin = old; r.Close() }()
+
+	return confirmAction(false, "Proceed?")
+}
+
+func TestConfirmAction_AcceptsY(t *testing.T) {
+	if confirmWithStdin(t, "y\n") != true {
+		t.Fatal("expected true for 'y'")
+	}
+	if confirmWithStdin(t, "Y\n") != true {
+		t.Fatal("expected true for 'Y'")
+	}
+}
+
+func TestConfirmAction_RejectsOther(t *testing.T) {
+	for _, input := range []string{"n\n", "\n", "yes\n", "no\n"} {
+		if confirmWithStdin(t, input) != false {
+			t.Fatalf("expected false for input %q", input)
+		}
 	}
 }
 

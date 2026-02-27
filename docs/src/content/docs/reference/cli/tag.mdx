@@ -30,6 +30,7 @@ Manages tags for a Hub pipeline. Without a tag argument, lists all tags. With a 
 |------|-------|-------------|
 | `--delete` | `-d` | Delete the specified tag |
 | `--force` | `-f` | Overwrite an existing tag |
+| `--yes` | `-y` | Skip confirmation prompt (used with `--delete`) |
 
 ## Examples
 
@@ -45,6 +46,9 @@ pipe tag myorg/deploy v1.0.0 --force
 
 # Delete a tag
 pipe tag myorg/deploy v1.0.0 --delete
+
+# Delete a tag without confirmation
+pipe tag myorg/deploy v1.0.0 --delete --yes
 ```
 
 ## Tag naming rules

@@ -26,14 +26,19 @@ Any aliases pointing to the removed pipeline are also deleted.
 
 ## Flags
 
-None.
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--yes` | `-y` | Skip confirmation prompt |
 
 ## Examples
 
 ```bash
-# Remove a local pipeline
+# Remove a local pipeline (prompts for confirmation)
 pipe rm deploy
 
 # Remove a Hub pipeline
 pipe rm myorg/deploy
+
+# Skip confirmation prompt
+pipe rm deploy --yes
 ```

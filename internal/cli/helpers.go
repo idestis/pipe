@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -134,6 +135,20 @@ func unwrapYAMLError(err error) error {
 		}
 	}
 	return err
+}
+
+// confirmAction prompts the user for a [y/N] confirmation. If skip is true
+// the prompt is bypassed and the action proceeds. When stdin is not a TTY
+// (e.g. CI) and skip is false, scanner.Scan reads EOF → empty string → "no".
+func confirmAction(skip bool, message string) bool {
+	if skip {
+		return true
+	}
+	fmt.Printf("%s [y/N] ", message)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	answer := scanner.Text()
+	return answer == "y" || answer == "Y"
 }
 
 // short safely truncates s to at most n characters for display.

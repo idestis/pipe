@@ -12,6 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var rmYes bool
+
+func init() {
+	rmCmd.Flags().BoolVarP(&rmYes, "yes", "y", false, "skip confirmation prompt")
+}
+
 var rmCmd = &cobra.Command{
 	Use:   "rm <name> or <owner>/<name>",
 	Short:   "Remove a pipeline",
@@ -21,7 +27,13 @@ var rmCmd = &cobra.Command{
 		owner, name, _ := resolve.ParsePipeArg(args[0])
 
 		if owner != "" {
+			if !confirmAction(rmYes, fmt.Sprintf("Remove hub pipeline %q?", owner+"/"+name)) {
+				return nil
+			}
 			return rmHubPipe(owner, name)
+		}
+		if !confirmAction(rmYes, fmt.Sprintf("Remove local pipeline %q?", name)) {
+			return nil
 		}
 		return rmLocalPipe(name)
 	},
